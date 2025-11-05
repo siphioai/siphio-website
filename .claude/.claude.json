@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "archon": {
+      "type": "http",
+      "url": "http://localhost:8051/mcp"
+    },
+    "supabase": {
+      "type": "http",
+      "url": "https://mcp.supabase.com/mcp",
+      "env": {
+        "SUPABASE_URL": "https://nqmgbyhngdrfakabcybc.supabase.co",
+        "SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xbWdieWhuZ2RyZmFrYWJjeWJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIwOTYwNzIsImV4cCI6MjA3NzY3MjA3Mn0.NK3-Zq9xN-HvAcSKYRGnKBZNA4MF2ShaJx9TJaGmwzE"
+      }
+    }
+  }
+}
