@@ -23,7 +23,14 @@
       "Bash(del nul 2)",
       "Bash(nul)",
       "Bash(dir nul)",
-      "Bash(powershell -Command \"Remove-Item -Path ''.\\nul'' -Force\")"
+      "Bash(powershell -Command \"Remove-Item -Path ''.\\nul'' -Force\")",
+      "Bash(git commit:*)",
+      "Bash(git config:*)",
+      "Bash(gh:*)",
+      "Bash(winget install:*)",
+      "Bash(git remote add:*)",
+      "Bash(git branch:*)",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": []
