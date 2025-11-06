@@ -1,0 +1,1 @@
+"""AI Nutrition Coach API - Python backend for macro tracker."""

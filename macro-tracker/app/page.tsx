@@ -1,15 +1,18 @@
 'use client';
 
+import { useState } from 'react';
 import { MacroGoalsForm } from '@/components/MacroGoalsForm';
 import { DailyMacroGauges } from '@/components/graphs/DailyMacroGauges';
 import { WeeklyTrendChart } from '@/components/graphs/WeeklyTrendChart';
 import { MonthlyCompositionChart } from '@/components/graphs/MonthlyCompositionChart';
 import { StreakCalendar } from '@/components/graphs/StreakCalendar';
 import { FoodLog } from '@/components/FoodLog';
+import { AINutritionCoach } from '@/components/AINutritionCoach';
 import { Button } from '@/components/ui/button';
 import { Bot } from 'lucide-react';
 
 export default function Home() {
+  const [coachOpen, setCoachOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-secondary/30">
@@ -26,7 +29,7 @@ export default function Home() {
                 size="lg"
                 variant="outline"
                 className="relative overflow-hidden group h-12 w-12 p-2"
-                onClick={() => {/* TODO: Add chat with AI functionality */}}
+                onClick={() => setCoachOpen(true)}
               >
                 <Bot className="w-full h-full" />
               </Button>
@@ -63,6 +66,9 @@ export default function Home() {
           </div>
         </section>
       </div>
+
+      {/* AI Nutrition Coach Modal */}
+      <AINutritionCoach open={coachOpen} onOpenChange={setCoachOpen} />
     </div>
   );
 }

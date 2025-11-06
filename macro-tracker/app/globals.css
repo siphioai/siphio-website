@@ -158,3 +158,30 @@
     @apply outline-2 outline-offset-2 outline-primary;
   }
 }
+
+/* Slide-in animations for AI Coach panel */
+@keyframes slide-in-from-right {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-out-to-right {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+.slide-in-from-right {
+  animation: slide-in-from-right 0.3s ease-out;
+}
+
+.slide-out-to-right {
+  animation: slide-out-to-right 0.3s ease-in;
+}
