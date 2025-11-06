@@ -38,6 +38,7 @@ export function FoodLog() {
   const [showSearch, setShowSearch] = useState(false);
   const [expandedMeals, setExpandedMeals] = useState<Set<string>>(new Set());
   const [addingToMealId, setAddingToMealId] = useState<string | null>(null);
+  const [openMealTypeDropdown, setOpenMealTypeDropdown] = useState<string | null>(null);
   const supabase = createClient();
 
   useEffect(() => {
@@ -79,6 +80,23 @@ export function FoodLog() {
     };
   }, []);
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (openMealTypeDropdown) {
+        setOpenMealTypeDropdown(null);
+      }
+    };
+
+    if (openMealTypeDropdown) {
+      document.addEventListener('click', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [openMealTypeDropdown]);
+
   const loadMeals = async () => {
     console.log('🔄 Loading meals...');
     const today = new Date().toISOString().split('T')[0];
@@ -116,7 +134,7 @@ export function FoodLog() {
 
     console.log('✅ Loaded meals:', mealsData);
     console.log('📊 Total meals:', mealsData?.length || 0);
-    mealsData?.forEach((meal, i) => {
+    (mealsData as Meal[])?.forEach((meal, i) => {
       console.log(`  Meal ${i + 1}: ${meal.meal_type}, items: ${meal.meal_items?.length || 0}`);
     });
     setMeals(mealsData || []);
@@ -132,7 +150,7 @@ export function FoodLog() {
       const { data: user, error: userError } = await supabase
         .from('users')
         .select('id')
-        .single();
+        .single() as { data: { id: string } | null; error: any };
 
       if (userError || !user) {
         console.error('❌ Error getting user:', userError);
@@ -150,15 +168,15 @@ export function FoodLog() {
       } else {
         // Always create a new snack meal with current timestamp for top-level "Add Food"
         console.log('🆕 Creating new snack meal with current timestamp...');
-        const { data: newMeal, error: createError } = await supabase
+        const { data: newMeal, error: createError } = (await supabase
           .from('meals')
           .insert({
             user_id: user.id,
             date: today,
-            meal_type: 'snack',
-          })
+            meal_type: 'snack' as MealType,
+          } as any)
           .select('id')
-          .single();
+          .single()) as { data: { id: string } | null; error: any };
 
         if (createError || !newMeal) {
           console.error('❌ Error creating meal:', createError);
@@ -172,11 +190,19 @@ export function FoodLog() {
       }
 
       // Get food item details to calculate macros
-      const { data: foodItem, error: foodError } = await supabase
+      const { data: foodItem, error: foodError } = (await supabase
         .from('food_items')
         .select('*')
         .eq('id', foodItemId)
-        .single();
+        .single()) as {
+          data: {
+            calories_per_100g: number;
+            protein_per_100g: number;
+            carbs_per_100g: number;
+            fat_per_100g: number;
+          } | null;
+          error: any
+        };
 
       if (foodError || !foodItem) {
         console.error('Error getting food item:', foodError);
@@ -208,7 +234,7 @@ export function FoodLog() {
         carbs,
         fat,
         logged_at: new Date().toISOString(),
-      });
+      } as any);
 
       if (insertError) {
         console.error('❌ Error inserting meal item:', insertError);
@@ -234,6 +260,21 @@ export function FoodLog() {
       console.error('Error deleting item:', error);
     } else {
       // Refresh the meals list after deletion
+      loadMeals();
+    }
+  };
+
+  const handleChangeMealType = async (mealId: string, newMealType: MealType) => {
+    const { error } = await supabase
+      .from('meals')
+      // @ts-expect-error - Database typing issue
+      .update({ meal_type: newMealType })
+      .eq('id', mealId);
+
+    if (error) {
+      console.error('Error updating meal type:', error);
+    } else {
+      // Refresh the meals list after update
       loadMeals();
     }
   };
@@ -414,13 +455,55 @@ export function FoodLog() {
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-3">
                           <span className="text-lg font-bold text-foreground">{timeLabel}</span>
-                          <div className={`px-3 py-1 rounded-full bg-gradient-to-br ${getMealGradient(meal.meal_type)} flex items-center gap-2 shadow-md`}>
-                            <div className="text-white">
-                              {getMealIcon(meal.meal_type)}
-                            </div>
-                            <span className="text-sm font-semibold text-white">
-                              {meal.name || getMealLabel(meal.meal_type)}
-                            </span>
+
+                          {/* Meal type dropdown */}
+                          <div className="relative" onClick={(e) => e.stopPropagation()}>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setOpenMealTypeDropdown(openMealTypeDropdown === meal.id ? null : meal.id);
+                              }}
+                              className={`px-3 py-1 rounded-full bg-gradient-to-br ${getMealGradient(meal.meal_type)} flex items-center gap-2 shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer`}
+                            >
+                              <div className="text-white">
+                                {getMealIcon(meal.meal_type)}
+                              </div>
+                              <span className="text-sm font-semibold text-white">
+                                {meal.name || getMealLabel(meal.meal_type)}
+                              </span>
+                              <ChevronDown className={`w-4 h-4 text-white transition-transform duration-200 ${openMealTypeDropdown === meal.id ? 'rotate-180' : ''}`} />
+                            </button>
+
+                            {/* Dropdown menu */}
+                            {openMealTypeDropdown === meal.id && (
+                              <div
+                                onClick={(e) => e.stopPropagation()}
+                                className="absolute left-full ml-2 top-0 z-50 min-w-[160px] bg-card border-2 border-border rounded-xl shadow-xl overflow-hidden"
+                              >
+                                {(['breakfast', 'lunch', 'dinner', 'snack'] as MealType[]).map((type) => (
+                                  <button
+                                    key={type}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleChangeMealType(meal.id, type);
+                                      setOpenMealTypeDropdown(null);
+                                    }}
+                                    className={`w-full px-4 py-2.5 flex items-center gap-3 hover:bg-secondary/50 transition-colors ${
+                                      meal.meal_type === type ? 'bg-secondary/30' : ''
+                                    }`}
+                                  >
+                                    <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${getMealGradient(type)} flex items-center justify-center`}>
+                                      <div className="text-white scale-75">
+                                        {getMealIcon(type)}
+                                      </div>
+                                    </div>
+                                    <span className="font-semibold text-sm">
+                                      {getMealLabel(type)}
+                                    </span>
+                                  </button>
+                                ))}
+                              </div>
+                            )}
                           </div>
                         </div>
                         <div className="text-xs text-muted-foreground font-medium">

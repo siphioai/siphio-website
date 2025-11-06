@@ -31,7 +31,10 @@ export function MonthlyCompositionChart() {
         const protein = summary?.total_protein || 0;
         const carbs = summary?.total_carbs || 0;
         const fat = summary?.total_fat || 0;
-        const caloriesTarget = summary?.calories_target || 2000;
+
+        // Use the HISTORICAL target from that specific day (stored in daily_summary)
+        // This preserves what the actual goal was on that day
+        const caloriesTarget = summary?.calories_target || null;
 
         const proteinCal = protein * 4;
         const carbsCal = carbs * 4;
@@ -62,6 +65,45 @@ export function MonthlyCompositionChart() {
     };
 
     fetchData();
+
+    // Subscribe to macro_goals changes to update the target line in real-time
+    const goalsChannel = supabase
+      .channel('macro_goals_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'macro_goals'
+        },
+        (payload) => {
+          console.log('Goals changed, refreshing chart:', payload);
+          fetchData(); // Reload the chart data with new targets
+        }
+      )
+      .subscribe();
+
+    // Subscribe to daily_summary changes for real-time macro updates
+    const summaryChannel = supabase
+      .channel('daily_summary_chart_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'daily_summary'
+        },
+        (payload) => {
+          console.log('Daily summary changed, refreshing chart:', payload);
+          fetchData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(goalsChannel);
+      supabase.removeChannel(summaryChannel);
+    };
   }, []);
 
   if (loading) {
@@ -90,10 +132,10 @@ export function MonthlyCompositionChart() {
   const avgCarbs = Math.round(data.reduce((sum, d) => sum + (viewMode === 'calories' ? d.carbsCal : viewMode === 'grams' ? d.carbsG : d.carbsPct), 0) / data.length);
   const avgFat = Math.round(data.reduce((sum, d) => sum + (viewMode === 'calories' ? d.fatCal : viewMode === 'grams' ? d.fatG : d.fatPct), 0) / data.length);
 
-  // Calculate average calorie target for reference line
+  // Calculate average calorie target from actual data (user's goals)
   const avgCalorieTarget = data.length > 0
     ? Math.round(data.reduce((sum, d) => sum + d.caloriesTarget, 0) / data.length)
-    : 2000;
+    : 0;
 
   const getDataKeys = () => {
     switch (viewMode) {

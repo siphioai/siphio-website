@@ -1,1013 +1,599 @@
-name: "Macro Tracking Web App"
-description: |
+## FEATURE:
 
-## Purpose
-Build a single-user macro tracking web application that enables real-time food logging with immediate visual feedback through 4 core graphs. Uses Next.js, Supabase, USDA FoodData Central API, and Recharts for a streamlined whole-foods tracking experience.
+Modern, conversion-optimized landing page for the Macro Tracker App (AI-integrated macro tracking application) with £10/month subscription model.
 
-## Core Principles
-1. **Context is King**: Include ALL necessary documentation, examples, and caveats
-2. **Real-time Updates**: Charts update immediately as food is logged
-3. **Simplicity First**: 4 focused graphs, whole foods only, no brand tracking
-4. **Multi-user Ready**: Single-user now, architected for multi-user expansion
-5. **Progressive Success**: Start simple, validate, then enhance
+**Core Requirements:**
+- AI-first positioning: "Track Your Macros. Let AI Do the Rest."
+- Friendly, approachable tone with exciting AI integration reveal
+- Reuse existing design system from main app (colors, typography, components)
+- Single page with clear sections leading to free trial CTA
+- No code implementation yet - documentation and planning phase only
+
+## CONTEXT FROM DISCOVERY CONVERSATION:
+
+### App Overview (Already Built)
+- **Tech Stack**: Next.js 15, React 19, TypeScript, Supabase, Recharts, Tailwind CSS 4, shadcn/ui
+- **Current Features**:
+  - Real-time macro tracking with circular progress gauges
+  - 300,000+ USDA-verified food database
+  - Beautiful data visualizations (daily gauges, weekly trends, streak calendar, monthly composition)
+  - Timeline-based food logging with meal organization
+  - Customizable daily macro goals with visual split bar
+  - Supabase real-time subscriptions (sub-100ms updates)
+
+### Design System (Must Match)
+**Colors:**
+- Primary: #0170B9 (MacroFactor blue)
+- Chart colors: Green #10B981 (protein), Amber #F59E0B (carbs), Purple #8B5CF6 (fat)
+- Background: White (#FFFFFF)
+- Secondary: #F5F5F5
+- Border: #E5E5E5
+
+**Typography:**
+- Font: DM Sans (weights: 400, 700)
+- H1: 2rem (32px)
+- H2: 1.5rem (24px)
+- Base: 16px
+- Line height: 1.6
+
+**Styling Patterns:**
+- Border radius: 0.75rem (12px) - "rounded-xl"
+- Gradients: Heavy use throughout (text, backgrounds, overlays)
+- Cards: White bg, subtle borders (border-border/50), shadow-md, hover effects
+- Animations: Smooth transitions (duration-300), scale on hover, fade-ins
+- Icons: Lucide React
+- Glassmorphism: backdrop-blur-sm effects
+
+### AI Features (The Hook)
+**What the AI Does (Must Emphasize):**
+1. **Chat Interface** - Ask questions about your nutrition data
+   - "Why did I exceed my carbs?"
+   - "How's my week looking?"
+   - "Am I hitting my protein goals?"
+
+2. **Smart Summaries** - AI analyzes and explains your patterns
+   - Weekly summaries with insights
+   - Nutrient intake analysis
+   - Pattern recognition in eating habits
+
+3. **Automatic Optimization** - AI suggests macro adjustments
+   - Based on weight trend and progress
+   - Personalized recommendations
+   - Goal optimization over time
+
+### Positioning Strategy
+**Core Message:**
+"A beautiful, simple macro tracker that happens to have a really smart AI coach built in."
+
+**NOT:** "AI-powered nutrition intelligence platform" (too techy/aggressive)
+**YES:** "Track your macros, chat with AI when you need help" (friendly/approachable)
+
+**Target Audience:**
+Tech-savvy fitness enthusiasts (25-40) who appreciate good software design and are serious about nutrition but not necessarily pro bodybuilders. They want precision + beauty + convenience.
+
+**Price Point:** £10/month with 7-day free trial
+
+## LANDING PAGE STRUCTURE:
+
+### Section 1: Hero
+**Headline:** "Track Your Macros. Let AI Do the Rest."
+**Subheadline:** "Beautiful macro tracking with a smart AI coach built right in. Set your goals, log your food, and let the AI optimize everything automatically."
+
+**Visual:**
+- Clean white background with subtle gradient
+- Animated circular progress gauges (from actual app)
+- Small AI chat bubble peeking from corner with friendly message
+- Example: "💡 You're 12g away from your protein goal - perfect timing for dinner!"
+
+**CTA:** "Start Free Trial"
+**Trust line:** "£10/month after 7 days • No credit card required"
 
 ---
 
-## Goal
-Create a production-ready macro tracking web application where users can search whole foods via USDA API, log them to specific meals, track against daily macro goals, and visualize progress through 4 real-time graphs.
+### Section 2: The "Oh, It Has AI" Moment
+**Headline:** "Meet Your Built-In AI Coach"
+**Subheadline:** "Most macro trackers just show you numbers. This one actually helps you understand them."
 
-## Why
-- **Personal health**: Track daily macro intake (protein, carbs, fat, calories) accurately
-- **Consistency tracking**: Visual streak calendar to maintain daily logging habits
-- **Data-driven insights**: Historical trends show macro adherence patterns
-- **Problems solved**: Eliminates need for complex apps with brand databases; focuses on whole foods only
+**Three capability cards:**
 
-## What
-A web application where:
-- Users search whole foods (steak, basmati rice, pomegranate, eggs, etc.) via USDA API
-- Foods are logged to specific meals (breakfast, lunch, dinner, snack)
-- Individual food items tracked separately within meals
-- Daily macro goals set (calories, protein, carbs, fat targets)
-- 4 real-time graphs provide instant visual feedback
-- Historical data shows trends and consistency
+**1. Ask Questions 💬**
+"Curious why you went over yesterday? Just ask. The AI knows your data and can explain it."
+- Visual: Chat bubble showing example conversation
 
-### Success Criteria
-- [ ] USDA API integration returns accurate whole food data
-- [ ] Food logging works with quantity input (grams)
-- [ ] Meals contain multiple food items tracked separately
-- [ ] Daily macro goals can be set and edited
-- [ ] Graph #1: Streak calendar shows logging consistency
-- [ ] Graph #2: Daily macro gauges show real-time progress (Cal, P, C, F)
-- [ ] Graph #3: 7-day trend line chart shows macro fluctuations vs targets
-- [ ] Graph #4: 30-day stacked area chart shows macro composition over time
-- [ ] All charts update immediately when food is logged
-- [ ] Database schema supports future multi-user expansion
+**2. Get Smart Summaries 📊**
+"No more staring at numbers wondering what they mean. Ask for a summary and get instant insights."
+- Visual: AI providing weekly summary
 
-## All Needed Context
+**3. Automatic Optimization 🎯**
+"The AI watches your progress and suggests macro adjustments when you need them."
+- Visual: AI suggesting calorie increase
 
-### Documentation & References
-```yaml
-# MUST READ - Include these in your context window
+**Key message:** "It's like having a nutrition coach in your pocket, except it's always available and knows your exact data."
 
-# Next.js & React
-- url: https://nextjs.org/docs/app
-  why: Next.js 14 App Router patterns, routing, server components
+---
 
-- url: https://ui.shadcn.com/docs
-  why: SHAD CN component installation and usage patterns
+### Section 3: How It Works (Simple 3-Step)
+**Headline:** "Three Steps to Better Nutrition"
 
-# Database & Real-time
-- url: https://supabase.com/docs/guides/database/tables
-  why: Creating tables, relationships, and indexes in Supabase
+**Step 1: Set Your Goals 🎯**
+"Tell us your target. The AI calculates your perfect macro split."
+- Screenshot: MacroGoalsForm with visual split bar
 
-- url: https://supabase.com/docs/guides/realtime
-  why: Real-time subscriptions for live chart updates
+**Step 2: Log Your Food 🍽️**
+"Search from 300,000+ foods and log what you eat. Updates instantly."
+- Screenshot: FoodLog timeline
 
-- url: https://supabase.com/docs/reference/javascript/select
-  why: Supabase JavaScript client query patterns
+**Step 3: Let AI Guide You 🤖**
+"Ask questions, get summaries, and receive smart recommendations as you go."
+- Screenshot: Dashboard with AI chat
 
-# Food Data API
-- url: https://fdc.nal.usda.gov/api-guide.html
-  why: USDA FoodData Central API documentation
+---
 
-- url: https://fdc.nal.usda.gov/
-  why: USDA database search interface to test queries
+### Section 4: The Beautiful Tracker
+**Headline:** "Actually Beautiful to Use"
+**Subheadline:** "Because you're more likely to track when the app doesn't feel like homework."
 
-- url: https://app.quicktype.io/
-  why: Generate TypeScript types from USDA API responses
+**Full dashboard screenshot with callouts:**
+- ⚡ "Updates the second you log"
+- 📊 "Charts that actually look good"
+- 🔥 "Track streaks and stay consistent"
+- 🤖 "AI chat always ready to help"
 
-# Charts
-- url: https://recharts.org/en-US/guide
-  why: Recharts core concepts and patterns
+**Feature list:**
+- ✅ Real-time macro tracking
+- ✅ Beautiful progress visualizations
+- ✅ 300,000+ USDA-verified foods
+- ✅ Streak and consistency tracking
+- ✅ Built-in AI coach (the differentiator)
 
-- url: https://recharts.org/en-US/api/LineChart
-  why: Multi-line chart for 7-day trends (Graph #3)
+---
 
-- url: https://recharts.org/en-US/api/AreaChart
-  why: Stacked area chart for 30-day macro composition (Graph #4)
+### Section 5: What Makes the AI Special
+**Headline:** "Why the AI Actually Matters"
+**Subheadline:** "It's not just a chatbot - it's built into the entire app."
 
-# TypeScript & Validation
-- url: https://zod.dev/
-  why: Schema validation for API responses and forms
+**Two-column comparison:**
+- Without AI (Other Apps) vs With AI (This App)
+- Show clear advantages of AI integration
+
+**Key insight:**
+"The difference? The AI actually knows YOUR data. It's not giving generic advice - it's analyzing your specific entries, your weight trend, and your goals."
+
+---
+
+### Section 6: Real AI Examples
+**Headline:** "What You Can Actually Ask"
+
+**Three realistic chat bubbles:**
+1. "Am I hitting my protein goals?" → Detailed response with averages
+2. "Why can't I stick to my carbs on weekends?" → Pattern analysis
+3. "Should I change my goals?" → Personalized recommendation
+
+**Simple message:** "Just talk to it like you'd talk to a coach. It understands context and gives you real answers."
+
+---
+
+### Section 7: Who Is This For?
+**Headline:** "Whether You're..."
+
+**Three simple personas:**
+- **Building Muscle 💪** - Track surplus, get AI recommendations on macro adjustments
+- **Losing Fat 🔥** - Monitor deficit, let AI suggest tweaks when progress stalls
+- **Just Eating Better 🥗** - See what you're eating, understand patterns, improve gradually
+
+**Friendly close:** "No matter your goal, having AI help makes the whole thing easier."
+
+---
+
+### Section 8: Simple Pricing
+**Headline:** "One Simple Plan"
+
+**£10 / month**
+
+**What you get:**
+- ✅ Unlimited food logging
+- ✅ Real-time macro tracking
+- ✅ Beautiful charts and insights
+- ✅ **AI coach built in**
+- ✅ 300,000+ verified foods
+- ✅ Streak tracking
+
+**CTA:** "Start 7-Day Free Trial"
+**Small print:** "No credit card required • Cancel anytime"
+
+**FAQ:**
+- Q: What makes the AI different?
+- Q: Do I have to use the AI?
+- Q: How accurate is the food database?
+
+---
+
+### Section 9: Final CTA
+**Headline:** "Ready to Try It?"
+**Subheadline:** "See what it's like to have AI actually help you hit your goals."
+
+**CTA:** "Start Free Trial"
+
+**Trust badges:**
+- 💳 No credit card needed
+- ⚡ Start tracking in 60 seconds
+- 🔒 Your data stays private
+
+---
+
+## VISUAL DESIGN SPECIFICATIONS:
+
+### Layout & Spacing
+- Max width: 1280px (container)
+- Section padding: 80px vertical, 24px horizontal (mobile), 48px (desktop)
+- Card spacing: 24px gap
+- Component border radius: 12px (matching app)
+
+### Color Usage
+- **Hero gradient background:** `from-primary/5 via-transparent to-chart-2/5`
+- **Section backgrounds:** Alternate white and `bg-secondary/30`
+- **AI sections:** Use green (#10B981) for AI-related elements
+- **CTA buttons:** Primary blue (#0170B9) with hover scale
+- **Chat bubbles:** Green for AI, white for user
+
+### Typography Hierarchy
+- Hero headline: 48-64px, bold, tight letter-spacing
+- Section headlines: 32-40px, bold
+- Subheadlines: 18-20px, regular
+- Body text: 16px, line-height 1.6
+- Small text: 14px for trust badges
+
+### Component Styling
+**Cards:**
+```
+border: 1px solid border-border/50
+border-radius: 12px
+padding: 24px
+background: white
+hover: border-primary/30, shadow-lg, scale-105
+transition: all 300ms
 ```
 
-### Current Codebase tree
-```bash
-c:\Users\marley\siphio-website\
-├── PRPs/
-│   ├── prp-readme.md
-│   ├── EXAMPLE_PRP_multi_agent_prp.md
-│   └── INITIAL.md (this file)
-└── (other website files)
+**Buttons:**
+```
+Primary CTA: bg-primary, text-white, rounded-xl, px-8, py-4
+Secondary: border-2, border-primary, text-primary
+Hover: scale-105, shadow-xl
 ```
 
-### Desired Codebase tree with files to be added
-```bash
-macro-tracker/                          # New project directory
-├── app/                                # Next.js App Router
-│   ├── layout.tsx                      # Root layout with providers
-│   ├── page.tsx                        # Dashboard (main view)
-│   ├── api/
-│   │   ├── usda/
-│   │   │   └── route.ts                # USDA API proxy endpoint
-│   │   └── goals/
-│   │       └── route.ts                # Macro goals CRUD
-│   └── globals.css                     # Tailwind styles
+**Chat Bubbles:**
+```
+AI messages: bg-gradient-to-br from-chart-2/20 to-chart-2/5, rounded-2xl, p-4
+User messages: bg-secondary, rounded-2xl, p-4
+```
+
+### Animations
+- **Scroll animations:** Fade up on viewport enter (stagger by 100ms)
+- **Hero gauges:** Animated stroke-dashoffset (matching app component)
+- **Hover effects:** Scale 1.05, duration 200ms
+- **Chat bubbles:** Fade in with slight bounce
+- **CTA buttons:** Pulse effect on primary CTA
+
+---
+
+## TECHNICAL REQUIREMENTS:
+
+### File Structure (To Be Created)
+```
+macro-tracker/
+├── app/
+│   └── landing/
+│       └── page.tsx           # Landing page route
 ├── components/
-│   ├── ui/                             # SHAD CN components
-│   │   ├── button.tsx
-│   │   ├── card.tsx
-│   │   ├── input.tsx
-│   │   ├── dialog.tsx
-│   │   ├── select.tsx
-│   │   └── ...                         # Other SHAD CN components
-│   ├── FoodSearch.tsx                  # Search interface with USDA integration
-│   ├── MealSection.tsx                 # Meal container (breakfast/lunch/dinner/snack)
-│   ├── FoodItem.tsx                    # Individual logged food with edit/delete
-│   ├── MacroGoalsForm.tsx              # Set daily macro targets
-│   ├── graphs/
-│   │   ├── StreakCalendar.tsx          # Graph #1: Heatmap calendar
-│   │   ├── DailyMacroGauges.tsx        # Graph #2: 4 circular progress indicators
-│   │   ├── WeeklyTrendChart.tsx        # Graph #3: 7-day multi-line chart
-│   │   └── MonthlyCompositionChart.tsx # Graph #4: 30-day stacked area
-│   └── providers/
-│       └── SupabaseProvider.tsx        # Supabase client context
-├── lib/
-│   ├── supabase/
-│   │   ├── client.ts                   # Supabase browser client
-│   │   ├── server.ts                   # Supabase server client
-│   │   └── types.ts                    # Database TypeScript types
-│   ├── api/
-│   │   └── usda.ts                     # USDA API client functions
-│   ├── utils/
-│   │   ├── calculations.ts             # Macro calculations (quantity * per-100g)
-│   │   ├── date-helpers.ts             # Date formatting and manipulation
-│   │   └── cn.ts                       # Class name utility (SHAD CN)
-│   └── hooks/
-│       ├── useRealtimeMacros.ts        # Real-time macro totals subscription
-│       ├── useDailyGoals.ts            # Fetch and update goals
-│       └── useStreakData.ts            # Calculate logging streak
-├── types/
-│   ├── database.ts                     # Supabase generated types
-│   ├── usda.ts                         # USDA API response types
-│   └── macros.ts                       # Macro calculation types
-├── supabase/
-│   └── migrations/
-│       └── 001_initial_schema.sql      # Database schema SQL
-├── .env.local                          # Environment variables (gitignored)
-├── .env.example                        # Environment template
-├── next.config.mjs                     # Next.js configuration
-├── tailwind.config.ts                  # Tailwind with SHAD CN setup
-├── tsconfig.json                       # TypeScript configuration
-├── package.json                        # Dependencies
-├── components.json                     # SHAD CN configuration
-└── README.md                           # Project documentation
+│   └── landing/
+│       ├── Hero.tsx
+│       ├── AIFeatureShowcase.tsx
+│       ├── HowItWorks.tsx
+│       ├── DashboardPreview.tsx
+│       ├── AIComparison.tsx
+│       ├── AIExamples.tsx
+│       ├── PersonaCards.tsx
+│       ├── Pricing.tsx
+│       ├── FinalCTA.tsx
+│       └── TrustBadges.tsx
 ```
 
-### Known Gotchas & Library Quirks
-```typescript
-// CRITICAL: USDA API has rate limits - cache responses in Supabase food_items table
-// CRITICAL: USDA API returns nutrients in different formats - normalize to per-100g
-// CRITICAL: Supabase real-time requires Row Level Security (RLS) policies
-// CRITICAL: Next.js App Router - use 'use client' for components with hooks/state
-// CRITICAL: Recharts requires 'use client' directive
-// CRITICAL: Date handling - always use UTC to avoid timezone issues with daily summaries
-// CRITICAL: Macro calculations must round consistently (2 decimal places)
-// CRITICAL: Supabase client needs separate browser/server instances
-// CRITICAL: SHAD CN components require manual installation per component
-// CRITICAL: Food quantities stored in grams, but allow input in grams/oz/servings
-// CRITICAL: Daily summaries should be materialized view or trigger-updated for performance
-// CRITICAL: Prevent duplicate meal entries for same date/meal_type per user
-```
-
-## Implementation Blueprint
-
-### Database Schema
-
-```sql
--- migrations/001_initial_schema.sql
-
--- Users table (for future multi-user)
-CREATE TABLE users (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  email TEXT UNIQUE NOT NULL,
-  name TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Macro goals (allows changing goals over time)
-CREATE TABLE macro_goals (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-  calories_target INTEGER NOT NULL CHECK (calories_target > 0),
-  protein_target INTEGER NOT NULL CHECK (protein_target >= 0),
-  carbs_target INTEGER NOT NULL CHECK (carbs_target >= 0),
-  fat_target INTEGER NOT NULL CHECK (fat_target >= 0),
-  date DATE NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(user_id, date)
-);
-
--- Cached USDA food items (avoid repeated API calls)
-CREATE TABLE food_items (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  usda_fdc_id TEXT UNIQUE NOT NULL,
-  name TEXT NOT NULL,
-  calories_per_100g DECIMAL(10, 2) NOT NULL,
-  protein_per_100g DECIMAL(10, 2) NOT NULL,
-  carbs_per_100g DECIMAL(10, 2) NOT NULL,
-  fat_per_100g DECIMAL(10, 2) NOT NULL,
-  serving_size_g DECIMAL(10, 2),
-  category TEXT,
-  last_synced TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE INDEX idx_food_items_name ON food_items(name);
-CREATE INDEX idx_food_items_usda_id ON food_items(usda_fdc_id);
-
--- Meals (breakfast, lunch, dinner, snack)
-CREATE TYPE meal_type_enum AS ENUM ('breakfast', 'lunch', 'dinner', 'snack');
-
-CREATE TABLE meals (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-  date DATE NOT NULL,
-  meal_type meal_type_enum NOT NULL,
-  name TEXT, -- Optional custom name
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(user_id, date, meal_type)
-);
-
-CREATE INDEX idx_meals_user_date ON meals(user_id, date DESC);
-
--- Individual food entries within meals
-CREATE TABLE meal_items (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  meal_id UUID REFERENCES meals(id) ON DELETE CASCADE,
-  food_item_id UUID REFERENCES food_items(id) ON DELETE RESTRICT,
-  quantity_g DECIMAL(10, 2) NOT NULL CHECK (quantity_g > 0),
-  calories DECIMAL(10, 2) NOT NULL,
-  protein DECIMAL(10, 2) NOT NULL,
-  carbs DECIMAL(10, 2) NOT NULL,
-  fat DECIMAL(10, 2) NOT NULL,
-  logged_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE INDEX idx_meal_items_meal ON meal_items(meal_id);
-
--- Daily summary (materialized/trigger-updated for performance)
-CREATE TABLE daily_summary (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-  date DATE NOT NULL,
-  total_calories INTEGER DEFAULT 0,
-  total_protein DECIMAL(10, 2) DEFAULT 0,
-  total_carbs DECIMAL(10, 2) DEFAULT 0,
-  total_fat DECIMAL(10, 2) DEFAULT 0,
-  calories_target INTEGER,
-  protein_target INTEGER,
-  carbs_target INTEGER,
-  fat_target INTEGER,
-  has_logged BOOLEAN DEFAULT FALSE,
-  updated_at TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(user_id, date)
-);
-
-CREATE INDEX idx_daily_summary_user_date ON daily_summary(user_id, date DESC);
-
--- Function to update daily summary when meal_items change
-CREATE OR REPLACE FUNCTION update_daily_summary()
-RETURNS TRIGGER AS $$
-DECLARE
-  meal_date DATE;
-  meal_user_id UUID;
-BEGIN
-  -- Get meal date and user_id
-  SELECT m.date, m.user_id INTO meal_date, meal_user_id
-  FROM meals m
-  WHERE m.id = COALESCE(NEW.meal_id, OLD.meal_id);
-
-  -- Recalculate daily totals
-  INSERT INTO daily_summary (user_id, date, total_calories, total_protein, total_carbs, total_fat, has_logged, updated_at)
-  SELECT
-    meal_user_id,
-    meal_date,
-    COALESCE(SUM(mi.calories), 0)::INTEGER,
-    COALESCE(SUM(mi.protein), 0),
-    COALESCE(SUM(mi.carbs), 0),
-    COALESCE(SUM(mi.fat), 0),
-    COUNT(*) > 0,
-    NOW()
-  FROM meals m
-  LEFT JOIN meal_items mi ON m.id = mi.meal_id
-  WHERE m.user_id = meal_user_id AND m.date = meal_date
-  GROUP BY m.user_id, m.date
-  ON CONFLICT (user_id, date)
-  DO UPDATE SET
-    total_calories = EXCLUDED.total_calories,
-    total_protein = EXCLUDED.total_protein,
-    total_carbs = EXCLUDED.total_carbs,
-    total_fat = EXCLUDED.total_fat,
-    has_logged = EXCLUDED.has_logged,
-    updated_at = NOW();
-
-  RETURN COALESCE(NEW, OLD);
-END;
-$$ LANGUAGE plpgsql;
-
--- Trigger on meal_items insert/update/delete
-CREATE TRIGGER trigger_update_daily_summary
-AFTER INSERT OR UPDATE OR DELETE ON meal_items
-FOR EACH ROW
-EXECUTE FUNCTION update_daily_summary();
-
--- Row Level Security (RLS) policies
-ALTER TABLE users ENABLE ROW LEVEL SECURITY;
-ALTER TABLE macro_goals ENABLE ROW LEVEL SECURITY;
-ALTER TABLE meals ENABLE ROW LEVEL SECURITY;
-ALTER TABLE meal_items ENABLE ROW LEVEL SECURITY;
-ALTER TABLE daily_summary ENABLE ROW LEVEL SECURITY;
-
--- Policies (single-user for now, ready for auth expansion)
-CREATE POLICY "Users can view their own data" ON users
-  FOR SELECT USING (true); -- Adjust when auth is added
-
-CREATE POLICY "Users can manage their goals" ON macro_goals
-  FOR ALL USING (true); -- Adjust when auth is added
-
-CREATE POLICY "Users can manage their meals" ON meals
-  FOR ALL USING (true); -- Adjust when auth is added
-
-CREATE POLICY "Users can manage their meal items" ON meal_items
-  FOR ALL USING (true); -- Adjust when auth is added
-
-CREATE POLICY "Users can view their daily summary" ON daily_summary
-  FOR SELECT USING (true); -- Adjust when auth is added
-
--- Food items are public (read-only for users)
-ALTER TABLE food_items ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Food items are viewable by all" ON food_items
-  FOR SELECT USING (true);
-```
-
-### Data Models and Structure
-
-```typescript
-// types/macros.ts
-export interface MacroGoal {
-  id: string;
-  user_id: string;
-  calories_target: number;
-  protein_target: number;
-  carbs_target: number;
-  fat_target: number;
-  date: string; // ISO date string
-  created_at: string;
-}
-
-export interface FoodItem {
-  id: string;
-  usda_fdc_id: string;
-  name: string;
-  calories_per_100g: number;
-  protein_per_100g: number;
-  carbs_per_100g: number;
-  fat_per_100g: number;
-  serving_size_g?: number;
-  category?: string;
-  last_synced: string;
-}
-
-export interface Meal {
-  id: string;
-  user_id: string;
-  date: string;
-  meal_type: 'breakfast' | 'lunch' | 'dinner' | 'snack';
-  name?: string;
-  created_at: string;
-  meal_items?: MealItem[];
-}
-
-export interface MealItem {
-  id: string;
-  meal_id: string;
-  food_item_id: string;
-  food_item?: FoodItem; // Joined data
-  quantity_g: number;
-  calories: number;
-  protein: number;
-  carbs: number;
-  fat: number;
-  logged_at: string;
-}
-
-export interface DailySummary {
-  id: string;
-  user_id: string;
-  date: string;
-  total_calories: number;
-  total_protein: number;
-  total_carbs: number;
-  total_fat: number;
-  calories_target?: number;
-  protein_target?: number;
-  carbs_target?: number;
-  fat_target?: number;
-  has_logged: boolean;
-  updated_at: string;
-}
-
-export interface MacroProgress {
-  current: number;
-  target: number;
-  percentage: number;
-  status: 'under' | 'on-track' | 'over';
-}
-
-export interface DailyProgress {
-  date: string;
-  calories: MacroProgress;
-  protein: MacroProgress;
-  carbs: MacroProgress;
-  fat: MacroProgress;
-}
-
-// types/usda.ts
-export interface USDASearchResult {
-  fdcId: number;
-  description: string;
-  dataType: string;
-  foodNutrients: USDANutrient[];
-}
-
-export interface USDANutrient {
-  nutrientId: number;
-  nutrientName: string;
-  nutrientNumber: string;
-  unitName: string;
-  value: number;
-}
-
-export interface USDASearchResponse {
-  foods: USDASearchResult[];
-  totalHits: number;
-  currentPage: number;
-  totalPages: number;
-}
-```
-
-### List of Tasks to be Completed
-
-```yaml
-Task 1: Project Setup and Configuration
-ACTION: Create Next.js project with TypeScript
-  - npx create-next-app@latest macro-tracker --typescript --tailwind --app
-  - Install dependencies: @supabase/supabase-js, recharts, zod, date-fns
-  - Install SHAD CN: npx shadcn-ui@latest init
-
-CREATE .env.example:
-  - NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-  - NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
-  - USDA_API_KEY=your_usda_api_key (optional for higher rate limits)
-
-Task 2: Setup Supabase Database
-ACTION: Create Supabase project
-  - Sign up at supabase.com
-  - Create new project
-  - Run migrations/001_initial_schema.sql in SQL Editor
-  - Verify tables, indexes, triggers created
-
-CREATE lib/supabase/client.ts:
-  - PATTERN: Browser client with createClientComponentClient
-  - Export typed client
-
-CREATE lib/supabase/server.ts:
-  - PATTERN: Server client with createServerComponentClient
-  - For API routes and server components
-
-Task 3: USDA API Integration
-CREATE lib/api/usda.ts:
-  - PATTERN: Fetch API with error handling
-  - searchFoods(query: string): Promise<USDASearchResult[]>
-  - getFoodDetails(fdcId: number): Promise<FoodItem>
-  - Cache responses in Supabase food_items table
-  - Normalize nutrients to per-100g format
-
-CREATE app/api/usda/route.ts:
-  - PATTERN: Next.js API route handler
-  - Proxy USDA API to avoid CORS
-  - Return normalized FoodItem format
-
-Task 4: Install SHAD CN Components
-ACTION: Install required components
-  - npx shadcn-ui@latest add button card input dialog select
-  - npx shadcn-ui@latest add form label progress badge
-  - Verify components/ui/ populated
-
-Task 5: Macro Calculation Utilities
-CREATE lib/utils/calculations.ts:
-  - calculateMacros(food: FoodItem, quantityG: number): MacroValues
-  - calculateProgress(current: number, target: number): MacroProgress
-  - aggregateMealMacros(mealItems: MealItem[]): MacroValues
-  - PATTERN: Pure functions with TypeScript types
-
-Task 6: Build Food Search Component
-CREATE components/FoodSearch.tsx:
-  - PATTERN: Debounced search input
-  - Call /api/usda endpoint
-  - Display results with macro info
-  - "Add to meal" button with quantity input
-  - Use SHAD CN Dialog for quantity selection
-
-Task 7: Build Meal Components
-CREATE components/MealSection.tsx:
-  - PATTERN: Container for meal type (breakfast/lunch/dinner/snack)
-  - Display meal_items with totals
-  - "Add food" button opens FoodSearch
-
-CREATE components/FoodItem.tsx:
-  - Display individual food with quantity and macros
-  - Edit quantity inline
-  - Delete button with confirmation
-
-Task 8: Build Macro Goals Form
-CREATE components/MacroGoalsForm.tsx:
-  - PATTERN: SHAD CN Form with Zod validation
-  - Inputs: calories_target, protein_target, carbs_target, fat_target
-  - Save to macro_goals table
-  - Upsert for current date
-
-Task 9: Build Graph #1 - Streak Calendar
-CREATE components/graphs/StreakCalendar.tsx:
-  - PATTERN: Custom component with CSS Grid
-  - Fetch daily_summary for past 90 days
-  - Color cells by has_logged status
-  - Calculate current streak
-  - Display streak number prominently
-
-Task 10: Build Graph #2 - Daily Macro Gauges
-CREATE components/graphs/DailyMacroGauges.tsx:
-  - PATTERN: 4 circular progress indicators
-  - Use Recharts RadialBarChart
-  - Real-time subscription to daily_summary for today
-  - Color coding: green (90-110%), yellow (80-120%), red (outside)
-  - Display: current/target (percentage)
-
-Task 11: Build Graph #3 - Weekly Trend Chart
-CREATE components/graphs/WeeklyTrendChart.tsx:
-  - PATTERN: Recharts LineChart with multiple lines
-  - Fetch daily_summary for past 7 days
-  - 4 lines: calories, protein, carbs, fat
-  - Reference lines for targets
-  - Dual Y-axis (calories left, grams right)
-  - Tooltip shows all values
-
-Task 12: Build Graph #4 - Monthly Composition Chart
-CREATE components/graphs/MonthlyCompositionChart.tsx:
-  - PATTERN: Recharts AreaChart with stacked areas
-  - Fetch daily_summary for past 30 days
-  - Convert macros to calorie equivalents (P*4, C*4, F*9)
-  - Stack: protein (blue), carbs (green), fat (orange)
-  - Overlay: horizontal line for calorie target
-  - Tooltip shows breakdown
-
-Task 13: Real-time Subscriptions
-CREATE lib/hooks/useRealtimeMacros.ts:
-  - PATTERN: Supabase real-time channel subscription
-  - Subscribe to daily_summary changes for today
-  - Return current totals and goals
-  - Trigger re-render when meal_items change
-
-CREATE lib/hooks/useDailyGoals.ts:
-  - Fetch macro_goals for current date
-  - Provide updateGoals function
-  - Cache in React state
-
-CREATE lib/hooks/useStreakData.ts:
-  - Fetch daily_summary with has_logged = true
-  - Calculate consecutive days streak
-  - Return streak count and calendar data
-
-Task 14: Build Main Dashboard
-CREATE app/page.tsx:
-  - PATTERN: Server component for initial data fetch
-  - Client components for interactive elements
-  - Layout: 4 graphs + meal sections + goals form
-  - Responsive grid layout
-
-Task 15: Testing and Validation
-ACTION: Manual testing checklist
-  - Search for whole foods (steak, basmati rice, pomegranate)
-  - Add food to meal with quantity
-  - Verify macros calculate correctly
-  - Set macro goals
-  - Verify all 4 graphs display correctly
-  - Log food and confirm charts update immediately
-  - Test edit/delete food items
-  - Verify streak calendar updates
-  - Test on mobile viewport
-
-Task 16: Documentation
-CREATE README.md:
-  - PATTERN: Setup instructions, environment variables
-  - Database migration steps
-  - USDA API key setup (optional)
-  - Project structure overview
-  - Development commands
-  - Deployment guide (Vercel + Supabase)
-```
-
-### Per Task Pseudocode
-
-```typescript
-// Task 3: USDA API Integration
-// lib/api/usda.ts
-export async function searchFoods(query: string): Promise<FoodItem[]> {
-  // CRITICAL: Cache check first to avoid API calls
-  const cached = await supabase
-    .from('food_items')
-    .select('*')
-    .ilike('name', `%${query}%`)
-    .limit(10);
-
-  if (cached.data && cached.data.length > 0) {
-    return cached.data;
-  }
-
-  // USDA API call
-  const url = `https://api.nal.usda.gov/fdc/v1/foods/search?query=${encodeURIComponent(query)}&dataType=Foundation,SR Legacy&pageSize=10`;
-
-  const response = await fetch(url, {
-    headers: {
-      // API key optional for basic usage
-      ...(process.env.USDA_API_KEY && { 'X-Api-Key': process.env.USDA_API_KEY })
-    }
-  });
-
-  if (!response.ok) {
-    throw new Error(`USDA API error: ${response.status}`);
-  }
-
-  const data: USDASearchResponse = await response.json();
-
-  // CRITICAL: Normalize nutrients to per-100g
-  const normalized = data.foods.map(food => normalizeUSDAFood(food));
-
-  // Cache in Supabase
-  await supabase.from('food_items').upsert(normalized, {
-    onConflict: 'usda_fdc_id'
-  });
-
-  return normalized;
-}
-
-function normalizeUSDAFood(usda: USDASearchResult): FoodItem {
-  // GOTCHA: USDA returns nutrients in various formats
-  const getNutrient = (id: number) =>
-    usda.foodNutrients.find(n => n.nutrientId === id)?.value ?? 0;
-
-  return {
-    usda_fdc_id: usda.fdcId.toString(),
-    name: usda.description,
-    calories_per_100g: getNutrient(1008), // Energy (kcal)
-    protein_per_100g: getNutrient(1003),  // Protein
-    carbs_per_100g: getNutrient(1005),    // Carbs
-    fat_per_100g: getNutrient(1004),      // Total fat
-    category: usda.dataType
-  };
-}
-
-// Task 10: Daily Macro Gauges with Real-time
-// components/graphs/DailyMacroGauges.tsx
-'use client';
-
-export function DailyMacroGauges() {
-  const { current, targets } = useRealtimeMacros(); // Real-time hook
-
-  const macros = [
-    {
-      name: 'Calories',
-      current: current.calories,
-      target: targets.calories,
-      color: '#ef4444'
-    },
-    {
-      name: 'Protein',
-      current: current.protein,
-      target: targets.protein,
-      color: '#3b82f6'
-    },
-    // ... carbs, fat
-  ];
-
-  return (
-    <div className="grid grid-cols-2 gap-4">
-      {macros.map(macro => {
-        const percentage = (macro.current / macro.target) * 100;
-        const status = getStatus(percentage); // green/yellow/red logic
-
-        return (
-          <Card key={macro.name}>
-            <RadialBarChart /* Recharts component */>
-              {/* Configure radial bar with percentage and color */}
-            </RadialBarChart>
-            <div>
-              <p>{macro.current} / {macro.target}</p>
-              <p>{percentage.toFixed(0)}%</p>
-            </div>
-          </Card>
-        );
-      })}
-    </div>
-  );
-}
-
-// Task 13: Real-time subscription
-// lib/hooks/useRealtimeMacros.ts
-export function useRealtimeMacros() {
-  const [data, setData] = useState<DailySummary | null>(null);
-  const supabase = createClientComponentClient();
-  const today = format(new Date(), 'yyyy-MM-dd');
-
-  useEffect(() => {
-    // Initial fetch
-    const fetchData = async () => {
-      const { data } = await supabase
-        .from('daily_summary')
-        .select('*')
-        .eq('date', today)
-        .single();
-
-      setData(data);
-    };
-
-    fetchData();
-
-    // CRITICAL: Real-time subscription
-    const channel = supabase
-      .channel('daily_summary_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'daily_summary',
-          filter: `date=eq.${today}`
-        },
-        (payload) => {
-          setData(payload.new as DailySummary);
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [today]);
-
-  return {
-    current: {
-      calories: data?.total_calories ?? 0,
-      protein: data?.total_protein ?? 0,
-      carbs: data?.total_carbs ?? 0,
-      fat: data?.total_fat ?? 0
-    },
-    targets: {
-      calories: data?.calories_target ?? 2000,
-      protein: data?.protein_target ?? 150,
-      carbs: data?.carbs_target ?? 200,
-      fat: data?.fat_target ?? 65
-    }
-  };
-}
-```
-
-### Integration Points
-```yaml
-ENVIRONMENT:
-  - Create: .env.local
-  - Variables:
-      NEXT_PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
-      NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGc...
-      USDA_API_KEY=abc123 (optional - increases rate limit)
-
-SUPABASE SETUP:
-  - Create project at supabase.com
-  - Copy project URL and anon key to .env.local
-  - Run SQL migration in SQL Editor
-  - Enable Realtime for daily_summary table
-  - Verify RLS policies active
-
-USDA API:
-  - No API key required for basic usage
-  - Optional: Sign up at https://fdc.nal.usda.gov/api-key-signup.html
-  - Rate limit: 1000 requests/hour (no key), 3600/hour (with key)
-
-DEPENDENCIES:
-  - Update package.json:
-    - @supabase/supabase-js: ^2.39.0
-    - recharts: ^2.10.3
-    - zod: ^3.22.4
-    - date-fns: ^3.0.0
-    - @hookform/resolvers: ^3.3.4
-    - react-hook-form: ^7.49.3
-```
-
-## Validation Loop
-
-### Level 1: TypeScript & Build
-```bash
-# Run these FIRST - fix any errors before proceeding
-npm run build                   # Verify Next.js builds successfully
-npm run type-check             # TypeScript type checking (add script if needed)
-
-# Expected: No errors. If errors, READ and fix.
-```
-
-### Level 2: Database Verification
-```sql
--- Run in Supabase SQL Editor after migration
-
--- Verify tables created
-SELECT table_name FROM information_schema.tables
-WHERE table_schema = 'public'
-ORDER BY table_name;
-
--- Expected: users, macro_goals, food_items, meals, meal_items, daily_summary
-
--- Verify trigger works
-INSERT INTO users (email, name) VALUES ('test@example.com', 'Test User');
-
-INSERT INTO meals (user_id, date, meal_type)
-VALUES ((SELECT id FROM users WHERE email = 'test@example.com'), CURRENT_DATE, 'breakfast');
-
-INSERT INTO meal_items (meal_id, food_item_id, quantity_g, calories, protein, carbs, fat)
-VALUES (
-  (SELECT id FROM meals WHERE meal_type = 'breakfast' LIMIT 1),
-  (SELECT id FROM food_items LIMIT 1), -- Assumes at least one food item exists
-  200,
-  300,
-  40,
-  30,
-  10
-);
-
--- Verify daily_summary updated automatically
-SELECT * FROM daily_summary WHERE date = CURRENT_DATE;
-
--- Expected: Row exists with totals matching meal_items
-```
-
-### Level 3: Component Testing
-```typescript
-// Manual testing checklist
-
-// Test Food Search
-// 1. Open app in browser
-// 2. Use FoodSearch component
-// 3. Search "chicken breast"
-// Expected: Results from USDA API appear
-
-// Test Food Logging
-// 1. Click "Add to Breakfast"
-// 2. Enter quantity: 200g
-// 3. Submit
-// Expected: Food appears in meal, macros calculated
-
-// Test Real-time Updates
-// 1. Log a food item
-// 2. Observe Graph #2 (Daily Gauges)
-// Expected: Gauges update immediately without page refresh
-
-// Test Graph #3 (Weekly Trends)
-// 1. Navigate to past week
-// 2. Add food items to different days
-// Expected: Line chart updates with data points
-
-// Test Streak Calendar
-// 1. Log food for multiple consecutive days
-// 2. Check Graph #1
-// Expected: Streak count increments, calendar shows colored squares
-```
-
-### Level 4: Integration Test
-```bash
-# Full user flow test
-
-# 1. Set macro goals
-# Navigate to goals form
-# Set: Calories 2200, Protein 180g, Carbs 220g, Fat 70g
-# Expected: Goals saved, visible in gauges
-
-# 2. Log full day of meals
-# Breakfast: Eggs (100g), Sourdough (80g)
-# Lunch: Chicken breast (200g), Basmati rice (150g)
-# Dinner: Steak (250g), Broccoli (100g)
-# Snack: Pomegranate (150g)
-
-# 3. Verify all graphs
-# Graph #1: Today shows as logged (colored)
-# Graph #2: Gauges show totals vs targets
-# Graph #3: Today's data point appears on 7-day chart
-# Graph #4: Today's stacked area appears on 30-day chart
-
-# 4. Test edit/delete
-# Edit breakfast eggs quantity to 150g
-# Expected: Macros recalculate, graphs update
-# Delete snack pomegranate
-# Expected: Totals adjust, graphs update
-
-# 5. Test next day
-# Change date to tomorrow
-# Expected: Empty meals, new daily_summary row, graphs show 2 days
-```
-
-## Final Validation Checklist
-- [ ] Next.js app builds without errors
-- [ ] All TypeScript types compile
-- [ ] Database schema created successfully
-- [ ] Trigger updates daily_summary automatically
-- [ ] USDA API returns search results
-- [ ] Food items cache in Supabase
-- [ ] Macros calculate correctly (quantity * per-100g / 100)
-- [ ] Food logging works for all meal types
-- [ ] Edit/delete food items works
-- [ ] Macro goals can be set and updated
-- [ ] Graph #1 (Streak Calendar) displays and calculates streak
-- [ ] Graph #2 (Daily Gauges) shows real-time progress
-- [ ] Graph #3 (Weekly Trends) shows 7-day data with target lines
-- [ ] Graph #4 (Monthly Composition) shows 30-day stacked areas
-- [ ] Charts update immediately when food logged (real-time)
-- [ ] Responsive design works on mobile
-- [ ] README.md includes setup instructions
-- [ ] .env.example has all required variables
+### Dependencies (Already Installed)
+- Next.js 15 (App Router)
+- Tailwind CSS 4
+- Framer Motion (for scroll animations) - **MAY NEED TO INSTALL**
+- Lucide React (icons) - ✅ Already installed
+- shadcn/ui components - ✅ Already installed
+
+### Asset Requirements
+**Screenshots needed from existing app:**
+1. MacroGoalsForm modal (full screenshot)
+2. FoodLog timeline view (with meal items)
+3. Full dashboard view (all charts visible)
+4. DailyMacroGauges component (isolated)
+5. AI chat interface mockup (create mockup if not built yet)
+
+**Mockups to create:**
+1. AI chat interface with example conversations (3 variations)
+2. Hero animation of circular gauges
+3. Mobile responsive views
 
 ---
 
-## Anti-Patterns to Avoid
-- ❌ Don't hardcode user_id - architecture should support multi-user
-- ❌ Don't skip caching USDA API responses - rate limits exist
-- ❌ Don't ignore date timezone issues - always use UTC for daily boundaries
-- ❌ Don't recalculate macros on every render - use daily_summary table
-- ❌ Don't forget 'use client' directive for Recharts components
-- ❌ Don't skip real-time subscriptions - charts must update immediately
-- ❌ Don't hardcode macro goals - allow user customization
-- ❌ Don't mix server/client Supabase clients - use correct one per context
-- ❌ Don't ignore USDA nutrient ID mapping - nutrient positions vary
-- ❌ Don't commit .env.local with real credentials
+## COPYWRITING GUIDELINES:
 
-## MCP Server Usage During Development
+### Tone & Voice
+- **Friendly but not overly casual** - Professional without being stiff
+- **Excited about AI without being hypey** - "Oh cool, it has AI!" not "Revolutionary AI-powered..."
+- **Simple explanations** - Avoid jargon, explain benefits not features
+- **Confidence without arrogance** - "This works well" not "The best ever"
+
+### Key Messaging Pillars
+1. **Beautiful & Easy** - Emphasize visual design and simplicity
+2. **AI Integration** - Built-in, not bolted-on
+3. **Real-time Updates** - Instant feedback, no lag
+4. **Proven Accuracy** - USDA database, verified data
+
+### Words to Use
+✅ Simple, Beautiful, Smart, Instant, Personalized, Insights, Optimize, Understand, Track, Coach, Built-in, Real-time
+
+### Words to Avoid
+❌ Revolutionary, Cutting-edge, Disruptive, Game-changing, Advanced algorithms, Machine learning, Neural networks, Platform
+
+### Example Good Copy
+- "Track your macros, chat with AI when you need help"
+- "The AI knows your data and can explain it"
+- "Updates the second you log"
+- "Just talk to it like you'd talk to a coach"
+
+### Example Bad Copy
+- "Leverage AI-powered algorithmic optimization"
+- "Disruptive nutrition intelligence platform"
+- "Revolutionary machine learning integration"
+- "Advanced neural networks for precision tracking"
+
+---
+
+## CONVERSION OPTIMIZATION:
+
+### Primary CTA: "Start Free Trial"
+**Placement:**
+1. Hero section (primary, above fold)
+2. After AI showcase section
+3. After dashboard preview
+4. Pricing section (main focus)
+5. Final CTA section
+
+**Design:**
+- Large button (min 48px height for mobile touch)
+- High contrast (blue on white)
+- Hover animation (scale + shadow)
+- Clear clickable area
+
+### Trust Signals
+**Above fold:**
+- "£10/month after 7 days"
+- "No credit card required"
+
+**Throughout page:**
+- "300,000+ USDA-verified foods"
+- "Your data stays private"
+- "Cancel anytime"
+
+### Social Proof (If Available)
+- User count: "Join X users hitting their goals"
+- Meals logged: "Over X million meals tracked"
+- Rating/testimonials (placeholder for future)
+
+### Objection Handling
+**Objection 1:** "Is this just ChatGPT wrapper?"
+**Answer:** Section 5 - "The AI actually knows YOUR data"
+
+**Objection 2:** "Too complicated?"
+**Answer:** Section 3 - "Three simple steps"
+
+**Objection 3:** "Worth £10/month?"
+**Answer:** Section 8 - Show value vs human coach cost
+
+**Objection 4:** "Will I actually use it?"
+**Answer:** Section 4 - Emphasize beauty and ease
+
+---
+
+## RESPONSIVE DESIGN:
+
+### Breakpoints (Tailwind defaults)
+- Mobile: < 640px
+- Tablet: 640px - 1024px
+- Desktop: > 1024px
+
+### Mobile Optimizations
+- Stack columns to single column
+- Larger touch targets (min 44px)
+- Simplified hero (gauges below text)
+- Reduced padding (24px instead of 48px)
+- Hide or simplify complex charts
+- Single CTA visible (sticky at bottom?)
+
+### Tablet Optimizations
+- 2-column grid for cards
+- Maintain most desktop features
+- Adjust screenshot sizes
+
+### Desktop Optimizations
+- Full 3-column grids where appropriate
+- Side-by-side comparisons
+- Larger hero section
+- Animated scroll effects
+
+---
+
+## IMPLEMENTATION PHASES:
+
+### Phase 1: Content & Structure (This Document)
+- ✅ Define all sections and copy
+- ✅ Specify design system consistency
+- ✅ Outline component structure
+- ✅ Gather visual requirements
+
+### Phase 2: Asset Creation (Next)
+- [ ] Take screenshots of existing app
+- [ ] Create AI chat interface mockups
+- [ ] Design comparison graphics
+- [ ] Optimize images for web
+
+### Phase 3: Component Development (Future)
+- [ ] Build reusable landing page components
+- [ ] Implement animations with Framer Motion
+- [ ] Ensure mobile responsiveness
+- [ ] Match design system exactly
+
+### Phase 4: Integration & Testing (Future)
+- [ ] Connect to existing Next.js app
+- [ ] Set up routing (main app vs landing)
+- [ ] Test conversion flow
+- [ ] A/B test different copy/layouts
+
+---
+
+## SUCCESS METRICS:
+
+### Primary Goals
+1. **Conversion Rate:** % of visitors who start free trial
+2. **Time on Page:** Target > 2 minutes (engaged visitors)
+3. **Scroll Depth:** Target > 80% reach pricing section
+
+### Secondary Goals
+1. CTA click rate (track all CTA buttons)
+2. Section engagement (which sections get most attention)
+3. Mobile vs desktop conversion rates
+4. FAQ clicks (indicates objections)
+
+---
+
+## EXAMPLES:
+
+### Example Landing Pages to Reference
+- **MacroFactor:** https://macrofactorapp.com (beautiful data viz focus)
+- **Linear:** https://linear.app (clean, simple, product-first)
+- **Superhuman:** https://superhuman.com (AI integration messaging)
+- **Notion:** https://notion.so (friendly tone, clear benefits)
+
+### Inspiration for Sections
+- **Hero:** Linear (clean, centered, product preview)
+- **Features:** Notion (grid cards with icons)
+- **AI Showcase:** Superhuman (chat interface examples)
+- **Pricing:** Ghost (simple, single plan)
+- **CTA:** Framer (bold, clear, trust signals)
+
+---
+
+## DOCUMENTATION:
+
+### Key Resources
+- **Existing App:** c:\Users\marley\siphio-website\macro-tracker\
+- **Design System:** app/globals.css (CSS variables and theme)
+- **Components:** components/ (for reference on styling)
+- **Tailwind Config:** tailwind.config.ts (extends design system)
+
+### Copy Source
+- All copy finalized in this document
+- AI feature descriptions based on conversation
+- Positioning statement: "Track Your Macros. Let AI Do the Rest."
+
+---
+
+## OTHER CONSIDERATIONS:
+
+- Landing page should be accessible via root route (/) with option to "Enter App"
+- OR separate subdomain/path (landing.macro-tracker.com or /landing)
+- Consider adding simple analytics (Plausible/Fathom for privacy-first tracking)
+- Include meta tags for SEO and social sharing
+- Add schema.org markup for SoftwareApplication
+- Implement basic A/B testing capability (test headlines, CTA copy)
+- Consider adding animated explainer video later
+- Plan for blog/content marketing integration later
+- No authentication required on landing page (public)
+
+### Email Capture Strategy
+**Option 1:** Email capture before trial (build list)
+**Option 2:** Direct to trial signup (lower friction)
+**Recommendation:** Direct to trial - lower barrier, build list in-app
+
+### Exit Intent
+Consider exit-intent popup on desktop:
+- Headline: "Wait! Start Your Free Trial"
+- Benefit reminder: "AI coach included, no credit card required"
+- Simple email form or direct trial CTA
+
+---
+
+## MCP SERVER USAGE DURING DEVELOPMENT
 
 ### Supabase MCP
 **Use for:**
-- Generating SQL schema (already included above)
-- Creating complex queries for graph data aggregation
-- Testing SQL queries before implementing in code
-- Viewing table data during development
+- Querying existing app database to understand data structure
+- Testing SQL queries for landing page analytics tracking
+- Viewing user data structure for trial signup flow
+- Creating any landing page specific tables (e.g., email_signups, landing_analytics)
 
 **Example prompts:**
-- "Generate SQL to get 7-day macro totals grouped by date"
-- "Show me all meal_items for user X on date Y"
-- "Create a view for monthly macro composition"
+- "Show me the users table structure from macro tracker database"
+- "Create a table for landing page email signups with timestamp and source tracking"
+- "Query to count total meals logged (for social proof statistics)"
+- "Create view for landing page conversion funnel tracking"
 
-### Iconify MCP
+### shadcn/ui MCP
 **Use for:**
-- Finding icons for UI elements
+- Generating landing page component code quickly
+- Understanding component API and variants
+- Finding the right component for landing page sections
+- Ensuring consistency with existing app components
 
 **Example prompts:**
-- "Find flame icon for calories"
-- "Find muscle icon for protein"
-- "Find grain/wheat icon for carbs"
-- "Find droplet icon for fat"
-- "Find icons for breakfast, lunch, dinner, snack"
-- "Find calendar icon for streak tracker"
-- "Find chart icons for graphs"
+- "Generate a Hero component with heading, subheading, and CTA button using shadcn Button"
+- "Show me how to create a pricing Card component with shadcn Card and Badge"
+- "Create a responsive 3-column grid with shadcn Card for feature showcase"
+- "Generate a Dialog component for exit-intent popup"
+- "How to use Progress component for animated loading states"
+- "Create animated scroll-reveal wrapper using shadcn components"
 
-### SHAD CN UI MCP
+### Arcon MCP
 **Use for:**
-- Generating component code quickly
-- Understanding component API and props
-- Finding the right component for a use case
+- Finding icons for landing page sections
+- Ensuring icon consistency with existing app (Lucide React icons)
+- Discovering appropriate icons for features and UI elements
 
 **Example prompts:**
-- "Show me how to use Dialog component for quantity input"
-- "Generate a Form component with Zod validation"
-- "How to use Progress component for macro gauges"
-- "Create a Card component for meal sections"
+- "Find AI/brain icon from Lucide for AI feature sections"
+- "Find checkmark icons from Lucide for feature lists"
+- "Find chart/analytics icons from Lucide for dashboard preview callouts"
+- "Find trophy/target icon from Lucide for goals section"
+- "Find shield/lock icon from Lucide for privacy/security trust badges"
+- "Show me messaging/chat icons from Lucide for AI chat examples"
 
-## Confidence Score: 8/10
+---
 
-High confidence due to:
-- Clear tech stack with proven libraries
-- Well-defined database schema with triggers
-- Straightforward USDA API integration
-- Recharts has good documentation for all 4 graph types
-- Supabase real-time is well-supported
+## CONFIDENCE SCORE: 8/10
 
-Minor uncertainty on:
-- USDA API nutrient ID mapping (may need adjustment per food type)
-- Recharts dual Y-axis configuration for Graph #3
-- Optimal caching strategy for USDA responses
-- Streak calculation edge cases (timezone boundaries)
+**High confidence due to:**
+- ✅ Clear positioning and messaging finalized
+- ✅ Complete section-by-section breakdown
+- ✅ Existing design system to match (reduces design work)
+- ✅ Well-defined target audience
+- ✅ Proven app exists (can take real screenshots)
+- ✅ Specific copywriting guidelines
+- ✅ Responsive design considerations
+- ✅ Conversion optimization built-in
 
-These uncertainties are resolvable during implementation with testing and API exploration.
+**Minor uncertainties:**
+- ⚠️ AI feature mockups need to be created (not built yet in app)
+- ⚠️ Actual conversion rates unknown until live
+- ⚠️ May need A/B testing to optimize copy/layout
+- ⚠️ Screenshot quality depends on app state (needs clean test data)
+
+**Next Steps:**
+1. Review and approve this document
+2. Create AI chat interface mockups (Figma or build quick prototype)
+3. Take high-quality screenshots of existing app
+4. Begin component development using this as spec

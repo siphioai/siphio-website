@@ -14,13 +14,67 @@ export function useRealtimeMacros() {
   useEffect(() => {
     // Initial fetch
     const fetchData = async () => {
+      // First, try to get daily summary
       const { data: summary } = await supabase
         .from('daily_summary')
         .select('*')
         .eq('date', today)
         .single();
 
-      setData(summary);
+      // If no daily summary exists, fetch goals from macro_goals and create initial summary
+      if (!summary) {
+        console.log('No daily summary found, fetching from macro_goals...');
+
+        // Get authenticated user
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (user) {
+          // Get user profile
+          const { data: profile } = await supabase
+            .from('users')
+            .select('id')
+            .eq('auth_id', user.id)
+            .single();
+
+          if (profile) {
+            // Fetch user's goals for today
+            const { data: goals } = await supabase
+              .from('macro_goals')
+              .select('*')
+              .eq('user_id', profile.id)
+              .eq('date', today)
+              .single();
+
+            if (goals) {
+              console.log('Found goals, creating initial daily summary:', goals);
+
+              // Create initial daily summary with user's goals
+              const { data: newSummary } = await supabase
+                .from('daily_summary')
+                .insert({
+                  user_id: profile.id,
+                  date: today,
+                  total_calories: 0,
+                  total_protein: 0,
+                  total_carbs: 0,
+                  total_fat: 0,
+                  calories_target: goals.calories_target,
+                  protein_target: goals.protein_target,
+                  carbs_target: goals.carbs_target,
+                  fat_target: goals.fat_target,
+                  has_logged: false
+                })
+                .select()
+                .single();
+
+              setData(newSummary);
+            }
+          }
+        }
+      } else {
+        setData(summary);
+      }
+
       setLoading(false);
     };
 
