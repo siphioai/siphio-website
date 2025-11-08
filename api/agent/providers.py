@@ -6,7 +6,7 @@ Following main_agent_reference pattern with multi-provider support.
 from typing import Union
 from pydantic_ai.models.openai import OpenAIModel
 from pydantic_ai.models.anthropic import AnthropicModel
-from .settings import settings
+from agent.settings import settings
 
 
 def get_llm_model() -> Union[OpenAIModel, AnthropicModel]:

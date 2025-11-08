@@ -5,11 +5,12 @@ Agent tools for fetching nutrition data from Supabase.
 import logging
 import asyncio
 from pydantic_ai import RunContext
-from .dependencies import CoachAgentDependencies
-from ..database.queries import (
+from agent.dependencies import CoachAgentDependencies
+from database.queries import (
     fetch_today_summary,
     fetch_weekly_summary,
-    fetch_pattern_summary
+    fetch_pattern_summary,
+    fetch_user_favorites
 )
 
 logger = logging.getLogger(__name__)
@@ -212,6 +213,45 @@ Your {most_consistent} intake is very consistent, while {least_consistent} varie
         except Exception as e:
             logger.error(f"fetch_pattern_analysis failed: {e}")
             return "Unable to perform pattern analysis. Please try again later."
+
+    @nutrition_coach.tool
+    async def fetch_favorite_foods(
+        ctx: RunContext[CoachAgentDependencies]
+    ) -> str:
+        """
+        Fetch user's favorite foods with nutritional information.
+
+        Use this when user asks about their favorite foods or saved items:
+        "What are my favorite foods?", "Show me my favorites", "What do I usually eat?"
+
+        Returns:
+            Formatted list of favorite foods with macro information
+        """
+        try:
+            favorites = await fetch_user_favorites(
+                ctx.deps.supabase,
+                ctx.deps.user_id
+            )
+
+            if not favorites:
+                return "You haven't favorited any foods yet. Click the star icon when searching for foods to save them as favorites for quick access."
+
+            result = f"Your Favorite Foods ({len(favorites)} total):\n\n"
+            for i, food in enumerate(favorites, 1):
+                result += f"{i}. {food['name']}\n"
+                result += f"   Per 100g: {food['calories_per_100g']} cal | "
+                result += f"P: {food['protein_per_100g']}g | "
+                result += f"C: {food['carbs_per_100g']}g | "
+                result += f"F: {food['fat_per_100g']}g\n"
+                if food.get('last_quantity_g'):
+                    result += f"   Last used: {food['last_quantity_g']}g\n"
+                result += "\n"
+
+            return result
+
+        except Exception as e:
+            logger.error(f"fetch_favorite_foods failed: {e}")
+            return "Unable to fetch favorite foods. Please try again later."
 
 
 # Register tools when module is imported

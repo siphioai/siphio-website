@@ -9,10 +9,12 @@ import { StreakCalendar } from '@/components/graphs/StreakCalendar';
 import { FoodLog } from '@/components/FoodLog';
 import { AINutritionCoach } from '@/components/AINutritionCoach';
 import { Button } from '@/components/ui/button';
-import { Bot } from 'lucide-react';
+import { Bot, Settings } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 export default function Home() {
   const [coachOpen, setCoachOpen] = useState(false);
+  const router = useRouter();
 
   return (
     <div className="min-h-screen bg-secondary/30">
@@ -24,6 +26,14 @@ export default function Home() {
             <p className="text-muted-foreground mt-1">Track your daily nutrition goals</p>
           </div>
           <div className="flex items-center gap-2">
+            <Button
+              size="lg"
+              variant="outline"
+              className="h-12 w-12 p-2"
+              onClick={() => router.push('/settings')}
+            >
+              <Settings className="w-full h-full" />
+            </Button>
             <div className="relative">
               <Button
                 size="lg"
@@ -34,7 +44,7 @@ export default function Home() {
                 <Bot className="w-full h-full" />
               </Button>
               {/* AI Notification Badge */}
-              <div className="absolute -top-3 -right-3 flex items-center gap-1 px-2.5 py-1 rounded-full bg-gradient-to-r from-primary to-chart-2 shadow-lg">
+              <div className="absolute -top-2 -right-2 flex items-center gap-0.5 px-2 py-1 rounded-full bg-gradient-to-r from-primary to-chart-2 shadow-lg">
                 <span className="text-[10px] font-bold text-white whitespace-nowrap">Use AI</span>
               </div>
             </div>

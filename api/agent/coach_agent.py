@@ -3,9 +3,9 @@ AI Nutrition Coach Agent - Main agent definition.
 """
 
 from pydantic_ai import Agent
-from .providers import get_llm_model
-from .dependencies import CoachAgentDependencies
-from .prompts import SYSTEM_PROMPT
+from agent.providers import get_llm_model
+from agent.dependencies import CoachAgentDependencies
+from agent.prompts import SYSTEM_PROMPT
 
 # Create agent with string output (default - no result_type needed)
 nutrition_coach = Agent(
@@ -16,4 +16,4 @@ nutrition_coach = Agent(
 
 # Tools will be registered in tools.py using @nutrition_coach.tool decorator
 # Import tools module to register them
-from . import tools  # noqa: F401
+import agent.tools  # noqa: F401

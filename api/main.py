@@ -7,9 +7,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from typing import List, Dict, Any, Optional
 import logging
-from api.agent.coach_agent import nutrition_coach
-from api.agent.dependencies import CoachAgentDependencies
-from api.database.supabase import get_supabase_client
+from agent.coach_agent import nutrition_coach
+from agent.dependencies import CoachAgentDependencies
+from database.supabase import get_supabase_client
 from pydantic_ai.messages import ModelMessagesTypeAdapter
 
 # Configure logging

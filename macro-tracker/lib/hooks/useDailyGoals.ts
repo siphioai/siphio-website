@@ -37,6 +37,7 @@ export function useDailyGoals() {
 
     const userId = (user as any).id as string;
 
+    // Update macro_goals table
     const { data, error } = await supabase
       .from('macro_goals')
       .upsert({
@@ -48,6 +49,63 @@ export function useDailyGoals() {
 
     if (error) throw error;
     setGoals(data);
+
+    // CRITICAL: Also update daily_summary targets for real-time updates
+    // Check if daily_summary exists for today
+    const { data: existingSummary, error: summaryFetchError } = await supabase
+      .from('daily_summary')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('date', newGoals.date)
+      .maybeSingle(); // Use maybeSingle() instead of single() to avoid error when no rows
+
+    console.log('Checking existing summary:', { existingSummary, summaryFetchError });
+
+    if (existingSummary) {
+      // Update existing daily_summary with new targets
+      console.log('Updating existing daily_summary with new targets:', newGoals);
+      const { error: updateError } = await supabase
+        .from('daily_summary')
+        .update({
+          calories_target: newGoals.calories_target,
+          protein_target: newGoals.protein_target,
+          carbs_target: newGoals.carbs_target,
+          fat_target: newGoals.fat_target
+        })
+        .eq('user_id', userId)
+        .eq('date', newGoals.date);
+
+      if (updateError) {
+        console.error('Error updating daily_summary:', updateError);
+      } else {
+        console.log('Successfully updated daily_summary - real-time should update UI');
+      }
+    } else {
+      // Create new daily_summary with goals if it doesn't exist
+      console.log('Creating new daily_summary with goals:', newGoals);
+      const { error: insertError } = await supabase
+        .from('daily_summary')
+        .insert({
+          user_id: userId,
+          date: newGoals.date,
+          total_calories: 0,
+          total_protein: 0,
+          total_carbs: 0,
+          total_fat: 0,
+          calories_target: newGoals.calories_target,
+          protein_target: newGoals.protein_target,
+          carbs_target: newGoals.carbs_target,
+          fat_target: newGoals.fat_target,
+          has_logged: false
+        });
+
+      if (insertError) {
+        console.error('Error inserting daily_summary:', insertError);
+      } else {
+        console.log('Successfully created daily_summary - real-time should update UI');
+      }
+    }
+
     return data;
   };
 

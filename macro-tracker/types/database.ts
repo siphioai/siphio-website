@@ -6,3 +6,13 @@ export type Database = {
     };
   };
 };
+
+export type UserSettings = {
+  id: string;
+  user_id: string;
+  theme: 'light' | 'dark' | 'auto';
+  measurement_units: 'metric' | 'imperial';
+  first_day_of_week: number;
+  created_at: string;
+  updated_at: string;
+};

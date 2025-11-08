@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Star, Clock, Search } from 'lucide-react';
+import { toast } from 'sonner';
+import confetti from 'canvas-confetti';
 
 interface FoodItem {
   id: string;
@@ -43,50 +45,96 @@ export function QuickAddFood({ onAddFood }: QuickAddFoodProps) {
   }, []);
 
   const loadFavorites = async () => {
-    const { data: user } = await supabase.from('users').select('id').single();
-    if (!user) return;
+    try {
+      const { data: { user: authUser } } = await supabase.auth.getUser();
 
-    const { data } = await supabase
-      .from('user_favorites')
-      .select(`
-        food_item_id,
-        last_quantity_g,
-        food_items (*)
-      `)
-      .eq('user_id', user.id)
-      .order('favorited_at', { ascending: false })
-      .limit(10);
+      let userId: string | null = null;
 
-    if (data) {
-      setFavorites(data.map((fav: any) => ({
-        ...fav.food_items,
-        last_quantity_g: fav.last_quantity_g,
-        is_favorite: true
-      })));
+      if (authUser) {
+        const { data: userData } = await supabase
+          .from('users')
+          .select('id')
+          .eq('auth_id', authUser.id)
+          .single();
+        userId = userData?.id || null;
+      } else {
+        const { data: defaultUser } = await supabase
+          .from('users')
+          .select('id')
+          .limit(1)
+          .single();
+        userId = defaultUser?.id || null;
+      }
+
+      if (!userId) return;
+
+      const { data } = await supabase
+        .from('user_favorites')
+        .select(`
+          food_item_id,
+          last_quantity_g,
+          food_items (*)
+        `)
+        .eq('user_id', userId)
+        .order('favorited_at', { ascending: false })
+        .limit(10);
+
+      if (data) {
+        setFavorites(data.map((fav: any) => ({
+          ...fav.food_items,
+          last_quantity_g: fav.last_quantity_g,
+          is_favorite: true
+        })));
+      }
+    } catch (error) {
+      console.error('Error loading favorites:', error);
     }
   };
 
   const loadRecents = async () => {
-    const { data: user } = await supabase.from('users').select('id').single();
-    if (!user) return;
+    try {
+      const { data: { user: authUser } } = await supabase.auth.getUser();
 
-    const { data } = await supabase
-      .from('recent_foods')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('logged_at', { ascending: false })
-      .limit(10);
+      let userId: string | null = null;
 
-    if (data) {
-      setRecents(data.map((item: any) => ({
-        id: item.food_item_id,
-        name: item.name,
-        calories_per_100g: item.calories_per_100g,
-        protein_per_100g: item.protein_per_100g,
-        carbs_per_100g: item.carbs_per_100g,
-        fat_per_100g: item.fat_per_100g,
-        last_quantity_g: item.last_quantity_g
-      })));
+      if (authUser) {
+        const { data: userData } = await supabase
+          .from('users')
+          .select('id')
+          .eq('auth_id', authUser.id)
+          .single();
+        userId = userData?.id || null;
+      } else {
+        const { data: defaultUser } = await supabase
+          .from('users')
+          .select('id')
+          .limit(1)
+          .single();
+        userId = defaultUser?.id || null;
+      }
+
+      if (!userId) return;
+
+      const { data } = await supabase
+        .from('recent_foods')
+        .select('*')
+        .eq('user_id', userId)
+        .order('logged_at', { ascending: false })
+        .limit(10);
+
+      if (data) {
+        setRecents(data.map((item: any) => ({
+          id: item.food_item_id,
+          name: item.name,
+          calories_per_100g: item.calories_per_100g,
+          protein_per_100g: item.protein_per_100g,
+          carbs_per_100g: item.carbs_per_100g,
+          fat_per_100g: item.fat_per_100g,
+          last_quantity_g: item.last_quantity_g
+        })));
+      }
+    } catch (error) {
+      console.error('Error loading recents:', error);
     }
   };
 
@@ -101,29 +149,107 @@ export function QuickAddFood({ onAddFood }: QuickAddFoodProps) {
     setActiveTab('search');
   };
 
-  const toggleFavorite = async (foodItemId: string) => {
-    const { data: user } = await supabase.from('users').select('id').single();
-    if (!user) return;
+  const triggerConfetti = (element: HTMLElement) => {
+    // Get button position
+    const rect = element.getBoundingClientRect();
+    const x = (rect.left + rect.width / 2) / window.innerWidth;
+    const y = (rect.top + rect.height / 2) / window.innerHeight;
 
+    // Fire confetti burst from the star button position
+    confetti({
+      particleCount: 40,
+      angle: 90,
+      spread: 360,
+      origin: { x, y },
+      colors: ['#FFD700', '#FFA500', '#FFFF00', '#FFE4B5'],
+      startVelocity: 25,
+      gravity: 0.8,
+      drift: 0,
+      ticks: 200,
+      zIndex: 9999,
+      disableForReducedMotion: false
+    });
+  };
+
+  const toggleFavorite = async (foodItemId: string, event?: React.MouseEvent<HTMLButtonElement>) => {
+    // Check if already favorited first
     const isFavorite = favorites.some(f => f.id === foodItemId);
 
-    if (isFavorite) {
-      await supabase
-        .from('user_favorites')
-        .delete()
-        .eq('user_id', user.id)
-        .eq('food_item_id', foodItemId);
-    } else {
-      await supabase
-        .from('user_favorites')
-        .insert({
-          user_id: user.id,
-          food_item_id: foodItemId,
-          last_quantity_g: Number(quantity) || 100
-        });
+    // Trigger confetti immediately when adding to favorites (not when removing)
+    if (!isFavorite && event?.currentTarget) {
+      triggerConfetti(event.currentTarget);
     }
 
-    loadFavorites();
+    try {
+      // Try to get authenticated user first
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+
+      let userId: string;
+
+      if (authUser) {
+        // Multi-user mode: lookup user by auth_id
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('id')
+          .eq('auth_id', authUser.id)
+          .single();
+
+        if (userError || !userData) {
+          console.error('User lookup error:', userError);
+          toast.error('Please log in to save favorites');
+          return;
+        }
+        userId = userData.id;
+      } else {
+        // Single-user mode: get the default user
+        const { data: defaultUser, error: defaultUserError } = await supabase
+          .from('users')
+          .select('id')
+          .limit(1)
+          .single();
+
+        if (defaultUserError || !defaultUser) {
+          console.error('No user found:', defaultUserError);
+          toast.error('No user profile found');
+          return;
+        }
+        userId = defaultUser.id;
+      }
+
+      if (isFavorite) {
+        const { error } = await supabase
+          .from('user_favorites')
+          .delete()
+          .eq('user_id', userId)
+          .eq('food_item_id', foodItemId);
+
+        if (error) {
+          console.error('Delete error:', error);
+          throw error;
+        }
+        toast.success('Removed from favorites');
+      } else {
+        const { error } = await supabase
+          .from('user_favorites')
+          .insert({
+            user_id: userId,
+            food_item_id: foodItemId,
+            last_quantity_g: Number(quantity) || 100
+          });
+
+        if (error) {
+          console.error('Insert error:', error);
+          throw error;
+        }
+
+        toast.success('Added to favorites! ⭐');
+      }
+
+      await loadFavorites();
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+      toast.error('Failed to update favorites');
+    }
   };
 
   const handleQuickAdd = (food: QuickFood) => {
@@ -137,13 +263,25 @@ export function QuickAddFood({ onAddFood }: QuickAddFoodProps) {
 
       // Update last quantity in favorites if it exists
       if (selectedFood.is_favorite) {
-        const { data: user } = await supabase.from('users').select('id').single();
-        if (user) {
-          await supabase
-            .from('user_favorites')
-            .update({ last_quantity_g: Number(quantity) })
-            .eq('user_id', user.id)
-            .eq('food_item_id', selectedFood.id);
+        try {
+          const { data: { user: authUser } } = await supabase.auth.getUser();
+          if (authUser) {
+            const { data: userData } = await supabase
+              .from('users')
+              .select('id')
+              .eq('auth_id', authUser.id)
+              .single();
+
+            if (userData) {
+              await supabase
+                .from('user_favorites')
+                .update({ last_quantity_g: Number(quantity) })
+                .eq('user_id', userData.id)
+                .eq('food_item_id', selectedFood.id);
+            }
+          }
+        } catch (error) {
+          console.error('Error updating favorite quantity:', error);
         }
       }
 
@@ -162,7 +300,7 @@ export function QuickAddFood({ onAddFood }: QuickAddFoodProps) {
         <button
           onClick={(e) => {
             e.stopPropagation();
-            toggleFavorite(food.id);
+            toggleFavorite(food.id, e);
           }}
           className="absolute top-2 right-2 p-2 rounded-full hover:bg-secondary transition-colors"
         >
@@ -298,7 +436,7 @@ export function QuickAddFood({ onAddFood }: QuickAddFoodProps) {
               Add {selectedFood?.name}
               {selectedFood && (
                 <button
-                  onClick={() => toggleFavorite(selectedFood.id)}
+                  onClick={(e) => toggleFavorite(selectedFood.id, e)}
                   className="ml-auto p-2 rounded-full hover:bg-secondary transition-colors"
                 >
                   <Star

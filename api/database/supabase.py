@@ -3,7 +3,7 @@ Supabase async client for database operations.
 """
 
 from supabase import acreate_client, AsyncClient
-from ..agent.settings import settings
+from agent.settings import settings
 
 
 async def get_supabase_client() -> AsyncClient:

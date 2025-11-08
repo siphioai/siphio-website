@@ -127,7 +127,7 @@ export function DailyMacroGauges() {
       </CardHeader>
 
       <CardContent className="relative pt-8 pb-6">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           {macros.map((macro) => {
             const progress = calculateProgress(macro.current, macro.target);
             const percentage = progress.percentage; // Allow percentage to exceed 100

@@ -6,7 +6,7 @@ from supabase import AsyncClient
 from typing import Dict, List, Optional
 import logging
 from datetime import datetime
-from ..utils.date_helpers import get_today_utc, get_date_n_days_ago
+from utils.date_helpers import get_today_utc, get_date_n_days_ago
 
 logger = logging.getLogger(__name__)
 
@@ -211,3 +211,49 @@ async def fetch_pattern_summary(
     except Exception as e:
         logger.error(f"fetch_pattern_summary failed for user {user_id}: {e}")
         raise
+
+
+async def fetch_user_favorites(
+    supabase: AsyncClient,
+    user_id: str
+) -> List[Dict]:
+    """
+    Fetch user's favorite foods with nutritional information.
+
+    Args:
+        supabase: Async Supabase client
+        user_id: Authenticated user ID
+
+    Returns:
+        List of favorite foods with their macro information
+    """
+    try:
+        response = await supabase.table('user_favorites') \
+            .select('*, food_items(*)') \
+            .eq('user_id', user_id) \
+            .order('favorited_at', desc=True) \
+            .limit(20) \
+            .execute()
+
+        if not response.data:
+            return []
+
+        # Format for agent consumption
+        favorites = []
+        for fav in response.data:
+            food = fav.get('food_items', {})
+            if food:
+                favorites.append({
+                    'name': food.get('name', 'Unknown'),
+                    'calories_per_100g': food.get('calories_per_100g', 0),
+                    'protein_per_100g': food.get('protein_per_100g', 0),
+                    'carbs_per_100g': food.get('carbs_per_100g', 0),
+                    'fat_per_100g': food.get('fat_per_100g', 0),
+                    'last_quantity_g': fav.get('last_quantity_g')
+                })
+
+        return favorites
+
+    except Exception as e:
+        logger.error(f"fetch_user_favorites failed for user {user_id}: {e}")
+        return []  # Return empty list on error instead of raising

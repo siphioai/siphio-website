@@ -1,203 +1,469 @@
+# Complete Application Functionality Audit & Bug Fixes
+
 ## FEATURE:
 
-- **AI Nutrition Coach Chat Interface** - Frontend integration of existing Pydantic AI agent into Next.js macro tracker web app
-- **Modal-based chat UI** with conversation memory, context-aware quick actions, and seamless design system integration
-- **Dual-mode operation**: Data-driven insights (when user has logged meals) + Educational conversations (when user is new)
-- **Next.js API Route middleware** for authentication, user_id lookup, and Python backend communication
-- **Production-ready deployment** with CORS, error handling, and mobile-optimized UX
+Fix all critical database integration bugs and incomplete functionality discovered through comprehensive full-stack analysis.
+
+**Problem:**
+- Settings page completely broken - queries use wrong database column names (auth_user_id instead of auth_id)
+- Data export/delete functionality references non-existent tables (daily_goals, food_logs)
+- Backend API has no authentication validation - security vulnerability
+- Privacy and Terms pages linked but don't exist (404 errors)
+- CORS configuration has hardcoded placeholder domains
+- No proper error handling or user feedback for failed operations
+
+**Solution:**
+- Fix all database queries to use correct column name: auth_id (not auth_user_id)
+- Update data export to query actual tables: macro_goals, meals, meal_items, daily_summary
+- Implement JWT token validation in FastAPI backend
+- Create basic Privacy Policy and Terms of Service pages
+- Configure CORS using environment variables
+- Add comprehensive error handling with user-friendly messages
+- Add loading states for long-running operations
+
+**Expected Behavior After Implementation:**
+- Settings page loads successfully and displays user profile
+- Profile name updates persist to database
+- Theme, measurement units, and calendar preferences save correctly
+- Data export downloads complete JSON with all user data (goals, meals, items, summaries, favorites)
+- Account deletion removes all user data and signs out user
+- Backend API rejects requests without valid JWT tokens
+- Users cannot access other users' data via API
+- Privacy and Terms links navigate to actual pages (not 404)
+- All operations show loading indicators and success/error feedback
+
+---
 
 ## EXAMPLES:
 
-In the `examples/` folder and existing codebase:
+**Database Schema Reference:**
+```sql
+-- CORRECT column name (from migration 006)
+ALTER TABLE users ADD COLUMN auth_id UUID UNIQUE;
 
-### Backend (Already Built - Reference Only):
-- `api/agent/coach_agent.py` - Production-ready Pydantic AI nutrition coach with 3 tools
-- `api/agent/tools.py` - Tools for fetching today's status, weekly progress, pattern analysis
-- `api/main.py` - FastAPI server with `/api/chat` endpoint (lines 42-103)
-- `api/tests/` - 67 passing tests validating agent functionality
-- `api/README.md` - Comprehensive backend documentation
+-- CORRECT table names (from migration 001)
+CREATE TABLE macro_goals (...);  -- NOT daily_goals
+CREATE TABLE meals (...);        -- part of food logging
+CREATE TABLE meal_items (...);   -- NOT food_logs
+CREATE TABLE daily_summary (...);
+```
 
-### Frontend (Existing Patterns to Follow):
-- `macro-tracker/components/ui/dialog.tsx` - Modal pattern (use this for chat container)
-- `macro-tracker/components/ui/button.tsx` - Button variants and sizing (use for Send, Quick Actions)
-- `macro-tracker/components/ui/input.tsx` - Input styling (use for message input)
-- `macro-tracker/components/FoodLog.tsx` - Complex interactive component with real-time updates (reference for state management)
-- `macro-tracker/components/MacroGoalsForm.tsx` - Dialog-based form with loading states (reference for modal UX)
-- `macro-tracker/components/graphs/DailyMacroGauges.tsx` - Data-driven UI with empty states (reference for conditional rendering)
-- `macro-tracker/app/page.tsx` - Main dashboard with Bot button placeholder (line 29)
-- `macro-tracker/lib/supabase/server.ts` - Server-side Supabase client (use for auth in API route)
-- `macro-tracker/lib/hooks/useRealtimeMacros.ts` - Real-time data hook (use to detect if user has data)
+**Current Broken Code:**
+```typescript
+// ❌ WRONG - ProfileSection.tsx line 35
+.eq('auth_user_id', user.id)  // Column doesn't exist!
 
-### Design System (Follow These Patterns):
-- `macro-tracker/app/globals.css` - Color palette, gradients, spacing system
-  - Primary: `#0170B9` (blue)
-  - Chart colors: Green (#10B981), Amber (#F59E0B), Purple (#8B5CF6)
-  - Border radius: `0.75rem` (12px) - more rounded than typical
-  - Shadows: `shadow-md` default, `hover:shadow-lg`
-- **Gradient backgrounds**: `from-primary/5 via-transparent to-chart-2/5` (used everywhere)
-- **Message bubbles**: User (right, primary blue), AI (left, secondary gray)
-- **Animations**: Framer Motion for entry, CSS transitions for interactions
+// ❌ WRONG - DataPrivacySection.tsx line 34
+supabase.from('daily_goals').select('*')  // Table doesn't exist!
+supabase.from('food_logs').select('*')    // Table doesn't exist!
+```
 
-Don't copy these examples directly - they serve different purposes. Use them as inspiration for component structure, state management, and visual consistency.
+**Correct Fixed Code:**
+```typescript
+// ✅ CORRECT - Use actual column name
+.eq('auth_id', user.id)
+
+// ✅ CORRECT - Use actual table names
+supabase.from('macro_goals').select('*')
+supabase.from('meals').select('*')
+supabase.from('meal_items').select('*')
+```
+
+**Backend Auth Implementation Example:**
+```python
+from fastapi import Header, HTTPException, Depends
+from supabase import create_client
+
+async def verify_jwt_token(authorization: str = Header(...)):
+    """Validate Supabase JWT and extract user_id"""
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(401, "Missing or invalid authorization header")
+
+    token = authorization.replace("Bearer ", "")
+    supabase = get_supabase_client()
+
+    # Verify token with Supabase
+    user = await supabase.auth.get_user(token)
+    if not user:
+        raise HTTPException(401, "Invalid or expired token")
+
+    # Look up internal user_id
+    result = await supabase.from("users").select("id").eq("auth_id", user.id).single()
+    if not result.data:
+        raise HTTPException(404, "User not found")
+
+    return result.data["id"]
+
+@app.post("/api/chat")
+async def chat(
+    request: ChatRequest,
+    user_id: str = Depends(verify_jwt_token)  # ✅ Validated from JWT
+):
+    # user_id is now secure - no spoofing possible
+```
+
+---
 
 ## DOCUMENTATION:
 
-### Core Documentation (MUST READ):
-- **Next.js App Router**: https://nextjs.org/docs/app
-  - Why: API Routes, server components, client components
-- **Supabase Auth (SSR)**: https://supabase.com/docs/guides/auth/server-side/nextjs
-  - Why: User authentication and session management
-- **React Hooks**: https://react.dev/reference/react
-  - Why: useState, useEffect, useRef for chat state
-- **Framer Motion**: https://www.framer.com/motion/
-  - Why: Animations matching existing design (Hero.tsx uses this)
-- **Lucide React Icons**: https://lucide.dev/
-  - Why: Icon library used throughout app (Bot, Send, etc.)
+**Supabase Documentation:**
+- Auth API: https://supabase.com/docs/reference/javascript/auth-getuser
+- Database queries: https://supabase.com/docs/reference/javascript/select
+- Row Level Security: https://supabase.com/docs/guides/auth/row-level-security
 
-### Backend Integration (Reference):
-- **Python Backend API**: `api/README.md` - Lines 135-173 (API contract)
-- **FRONTEND_INTEGRATION_GUIDE.md**: Lines 1-319 (Step-by-step integration guide)
-- **FastAPI Endpoint**: `api/main.py` lines 42-103
-  - Request: `{ user_id, message, conversation_history }`
-  - Response: `{ response, conversation_history, usage }`
+**FastAPI Documentation:**
+- Security: https://fastapi.tiangolo.com/tutorial/security/
+- Dependencies: https://fastapi.tiangolo.com/tutorial/dependencies/
+- CORS: https://fastapi.tiangolo.com/tutorial/cors/
 
-### Design System Reference:
-- **Tailwind CSS v4**: https://tailwindcss.com/docs
-  - Why: Utility classes, custom theme configuration
-- **Radix UI Primitives**: https://www.radix-ui.com/primitives
-  - Why: Dialog, accessible components (already used in app)
-- **Class Variance Authority**: https://cva.style/docs
-  - Why: Component variants (see button.tsx)
+**Existing Codebase Files:**
+- `macro-tracker/components/settings/ProfileSection.tsx` - Needs auth_id fix
+- `macro-tracker/components/settings/DataPrivacySection.tsx` - Needs table name fixes
+- `macro-tracker/components/settings/DangerZoneSection.tsx` - Needs both fixes
+- `macro-tracker/supabase/migrations/006_enable_multi_user_auth.sql` - Shows correct schema
+- `api/main.py` - Needs JWT validation
+- `api/agent/dependencies.py` - Can add auth dependency here
+
+---
 
 ## OTHER CONSIDERATIONS:
 
-### Critical Requirements:
-- **Authentication is REQUIRED** - User must be logged in to access chat (Bot button only visible to authenticated users)
-- **No data = Still functional** - Agent works conversationally even if user has no meals logged yet
-- **Mobile-first** - 50%+ users will be mobile, modal must be full-screen on mobile
-- **Real-time data detection** - Use `useRealtimeMacros()` to determine if user has data → show appropriate quick actions
-- **Conversation memory** - Store in component state (sessionStorage for persistence across refreshes in MVP)
-- **CORS required** - Python backend must allow Next.js origin (localhost:3000 dev, production domain)
+**Priority 1: Critical Database Fixes (Must Do First)**
 
-### Design System Gotchas:
-- ✅ **Use rounded-2xl (16px)** for message bubbles, not rounded-xl (12px)
-- ✅ **User messages**: `bg-primary text-primary-foreground` (right-aligned)
-- ✅ **AI messages**: `bg-secondary/80 border border-border/50` (left-aligned with avatar)
-- ✅ **Gradient avatars**: `from-chart-2 to-chart-3` for AI (green→amber)
-- ✅ **Loading states**: Three bouncing dots with staggered animation (see MacroGoalsForm.tsx:307 for spinner pattern)
-- ✅ **Timestamps**: `text-xs opacity-70` below message content
-- ✅ **Auto-scroll**: Use `useRef` + `scrollIntoView` on new messages
-- ✅ **Max width**: Modal `max-w-2xl` on desktop, `max-w-[calc(100%-2rem)]` on mobile
+1. **Fix auth_id Column Mismatch**
+   - Files to update:
+     - `macro-tracker/components/settings/ProfileSection.tsx` (lines 35, 58)
+     - `macro-tracker/components/settings/DangerZoneSection.tsx` (lines 48, 89)
+     - `macro-tracker/components/settings/DataPrivacySection.tsx` (line 21)
+   - Find & Replace: `.eq('auth_user_id', user.id)` → `.eq('auth_id', user.id)`
+   - Test: Settings page should load without errors
 
-### TypeScript Patterns:
-```typescript
-// Message type
-interface ChatMessage {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-  timestamp: number;
-  metadata?: {
-    metrics?: Record<string, any>;
-    toolUsed?: string;
-  };
-}
+2. **Fix Table Names in Export/Delete**
+   - Files to update:
+     - `macro-tracker/components/settings/DataPrivacySection.tsx` (lines 34-36)
+     - `macro-tracker/components/settings/DangerZoneSection.tsx` (lines 54-56)
+   - Replace query logic:
+   ```typescript
+   // BEFORE (broken)
+   const [{ data: goals }, { data: logs }] = await Promise.all([
+     supabase.from('daily_goals').select('*').eq('user_id', userId),
+     supabase.from('food_logs').select('*').eq('user_id', userId),
+   ]);
 
-// API response type
-interface ChatResponse {
-  response: string;
-  conversation_history: any[];
-  usage: {
-    input_tokens: number;
-    output_tokens: number;
-    total_tokens: number;
-  };
-}
+   // AFTER (working)
+   const [
+     { data: goals },
+     { data: meals },
+     { data: summary },
+     { data: favorites },
+     { data: settings }
+   ] = await Promise.all([
+     supabase.from('macro_goals').select('*').eq('user_id', userId),
+     supabase.from('meals').select('*').eq('user_id', userId),
+     supabase.from('daily_summary').select('*').eq('user_id', userId),
+     supabase.from('user_favorites').select('*').eq('user_id', userId),
+     supabase.from('user_settings').select('*').eq('user_id', userId),
+   ]);
+
+   // For meal_items - need to query via meals relationship
+   const mealIds = meals?.map(m => m.id) || [];
+   const { data: mealItems } = await supabase
+     .from('meal_items')
+     .select('*')
+     .in('meal_id', mealIds);
+   ```
+   - Update export JSON structure to include all data
+   - Test: Export should download complete valid JSON
+
+**Priority 2: Security Fixes (High Priority)**
+
+3. **Implement Backend JWT Validation**
+   - Create new file: `api/dependencies/auth.py`
+   ```python
+   from fastapi import Header, HTTPException
+   from api.database.supabase import get_supabase_client
+
+   async def get_current_user_id(authorization: str = Header(...)) -> str:
+       """Extract and validate user_id from Supabase JWT token"""
+       if not authorization.startswith("Bearer "):
+           raise HTTPException(
+               status_code=401,
+               detail="Invalid authorization header format"
+           )
+
+       token = authorization.replace("Bearer ", "")
+       supabase = await get_supabase_client()
+
+       try:
+           # Verify JWT with Supabase
+           user_response = await supabase.auth.get_user(token)
+           if not user_response or not user_response.user:
+               raise HTTPException(401, "Invalid or expired token")
+
+           auth_id = user_response.user.id
+
+           # Get internal user_id from users table
+           user_data = await supabase.from("users") \
+               .select("id") \
+               .eq("auth_id", auth_id) \
+               .single()
+
+           if not user_data.data:
+               raise HTTPException(404, "User profile not found")
+
+           return user_data.data["id"]
+
+       except Exception as e:
+           raise HTTPException(401, f"Authentication failed: {str(e)}")
+   ```
+
+   - Update `api/main.py`:
+   ```python
+   from api.dependencies.auth import get_current_user_id
+   from fastapi import Depends
+
+   # Remove user_id from request body
+   class ChatRequest(BaseModel):
+       message: str = Field(..., min_length=1, max_length=1000)
+       conversation_history: Optional[List[Dict[str, Any]]] = Field(default=[])
+
+   @app.post("/api/chat", response_model=ChatResponse)
+   async def chat(
+       request: ChatRequest,
+       user_id: str = Depends(get_current_user_id)  # ✅ Validated from JWT
+   ):
+       # user_id is now secure and validated
+   ```
+
+   - Update frontend API call in `macro-tracker/app/api/ai/chat/route.ts`:
+   ```typescript
+   // Get auth token
+   const { data: { session } } = await supabase.auth.getSession();
+   if (!session) {
+     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+   }
+
+   // Call backend with token (no user_id in body)
+   const response = await fetch(`${BACKEND_URL}/api/chat`, {
+     method: 'POST',
+     headers: {
+       'Content-Type': 'application/json',
+       'Authorization': `Bearer ${session.access_token}`,  // ✅ Send JWT
+     },
+     body: JSON.stringify({
+       message: body.message,
+       conversation_history: body.conversation_history,
+       // user_id removed - extracted from token in backend
+     }),
+   });
+   ```
+
+4. **Fix CORS Configuration**
+   - Update `api/agent/settings.py` to include frontend URL:
+   ```python
+   class Settings(BaseSettings):
+       # ... existing fields ...
+       frontend_url: str = Field(
+           default="http://localhost:3000",
+           description="Frontend application URL"
+       )
+   ```
+
+   - Update `api/main.py`:
+   ```python
+   from api.agent.settings import load_settings
+
+   settings = load_settings()
+
+   # Determine allowed origins based on environment
+   allowed_origins = [
+       "http://localhost:3000",  # Always allow localhost for dev
+   ]
+
+   if settings.app_env == "production":
+       allowed_origins.append(settings.frontend_url)
+
+   app.add_middleware(
+       CORSMiddleware,
+       allow_origins=allowed_origins,
+       allow_credentials=True,
+       allow_methods=["POST"],  # Only POST needed for /api/chat
+       allow_headers=["Content-Type", "Authorization"],
+       max_age=3600,
+   )
+   ```
+
+   - Add to `api/.env.example`:
+   ```bash
+   FRONTEND_URL=https://your-production-domain.com
+   ```
+
+**Priority 3: Missing Pages (Medium Priority)**
+
+5. **Create Privacy Policy Page**
+   - Create file: `macro-tracker/app/privacy/page.tsx`
+   ```tsx
+   import { Button } from '@/components/ui/button';
+   import { ArrowLeft } from 'lucide-react';
+   import Link from 'next/link';
+
+   export default function PrivacyPage() {
+     return (
+       <div className="min-h-screen bg-secondary/30">
+         <div className="container mx-auto max-w-4xl px-4 py-8">
+           <Link href="/settings">
+             <Button variant="ghost" size="sm">
+               <ArrowLeft className="mr-2 h-4 w-4" />
+               Back to Settings
+             </Button>
+           </Link>
+
+           <h1 className="text-4xl font-bold mt-8 mb-6">Privacy Policy</h1>
+           <div className="prose prose-slate dark:prose-invert max-w-none">
+             {/* Add privacy policy content */}
+             <p className="text-muted-foreground">Last updated: {new Date().toLocaleDateString()}</p>
+             {/* ... basic privacy content ... */}
+           </div>
+         </div>
+       </div>
+     );
+   }
+   ```
+
+6. **Create Terms of Service Page**
+   - Create file: `macro-tracker/app/terms/page.tsx`
+   - Similar structure to privacy page
+
+**Priority 4: UX Improvements (Lower Priority)**
+
+7. **Add Loading States**
+   - Update `DataPrivacySection.tsx`:
+   ```typescript
+   const [exporting, setExporting] = useState(false);
+
+   const handleExportData = async () => {
+     try {
+       setExporting(true);
+       // ... export logic ...
+     } finally {
+       setExporting(false);
+     }
+   };
+
+   <Button disabled={exporting}>
+     {exporting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+     {exporting ? 'Exporting...' : 'Export'}
+   </Button>
+   ```
+
+8. **Improve Error Messages**
+   - Add error mapping utility:
+   ```typescript
+   function getUserFriendlyError(error: any): string {
+     if (error.message?.includes('not found')) {
+       return 'Data not found. Please try refreshing the page.';
+     }
+     if (error.message?.includes('auth')) {
+       return 'Authentication error. Please sign out and back in.';
+     }
+     if (error.code === 'PGRST116') {
+       return 'No data available to export.';
+     }
+     return error.message || 'An unexpected error occurred';
+   }
+
+   // Use in catch blocks
+   catch (error: any) {
+     const userMessage = getUserFriendlyError(error);
+     toast.error(userMessage);
+     console.error('Full error:', error);
+   }
+   ```
+
+**Testing Requirements:**
+
+Manual Test Checklist:
+- [ ] Settings page loads without console errors
+- [ ] Profile section displays user name and email
+- [ ] Profile name can be edited and saved
+- [ ] Theme toggle updates database and applies immediately
+- [ ] Measurement units and calendar preferences save
+- [ ] Export data downloads complete JSON file
+- [ ] Exported JSON has all tables: user, macro_goals, meals, meal_items, daily_summary, favorites, settings
+- [ ] Delete account requires typing "DELETE"
+- [ ] Delete account with export downloads data first
+- [ ] Delete account removes user from database
+- [ ] User is signed out after account deletion
+- [ ] Backend rejects requests without Authorization header (401)
+- [ ] Backend rejects requests with invalid JWT (401)
+- [ ] Backend accepts requests with valid JWT
+- [ ] Privacy link goes to /privacy page (not 404)
+- [ ] Terms link goes to /terms page (not 404)
+- [ ] All operations show loading indicators
+- [ ] All operations show success/error toasts
+
+**Edge Cases to Handle:**
+- User has no settings row → Auto-created by trigger (already exists in migration 009)
+- Network error during save → Show error, don't update UI
+- Export with no data → Return empty arrays, not null
+- Delete account network failure → Don't sign out user
+- Invalid JWT token → Return 401 with clear message
+- meal_items query → Must join via meals table (no direct user_id)
+- Browser blocks download → Show error message
+- SessionStorage full → Handle quota exceeded error
+
+**Performance Considerations:**
+- Export queries run in parallel with Promise.all
+- Large datasets stream to file, not loaded into memory
+- Auth validation caches user lookup (consider adding cache)
+- Real-time subscriptions not needed for settings page
+
+**Security Considerations:**
+- Never expose Supabase service key to frontend
+- JWT tokens validated on every backend request
+- RLS policies enforce user isolation at database level
+- Export only includes data user owns (enforced by RLS)
+- Delete account respects CASCADE relationships
+- No user_id spoofing possible with JWT validation
+
+**Rollback Plan:**
+If critical issues arise:
+1. Database fixes: Revert component files, settings page becomes non-functional
+2. Backend auth: Remove middleware temporarily, redeploy without auth
+3. Frontend: Temporarily hide settings link if page crashes
+
+**Dependencies:**
+No new dependencies required - all fixes use existing libraries.
+
+**Environment Variables:**
+Add to `api/.env`:
+```bash
+FRONTEND_URL=https://your-production-domain.vercel.app
 ```
 
-### State Management Best Practices:
-- ✅ **Local state** with useState for messages, input, loading
-- ✅ **sessionStorage** for conversation persistence (MVP)
-- ✅ **Don't over-engineer** - No Redux, no Context API needed for MVP
-- ✅ **Optimistic UI** - Add user message immediately, then call API
-- ✅ **Error recovery** - Show error bubble with retry button inline
+**Estimated Effort:**
+- Database fixes: 2 hours
+- Backend auth: 4 hours
+- Privacy/Terms pages: 1 hour
+- UX improvements: 2 hours
+- Testing: 3 hours
+- **Total: 12 hours**
 
-### Performance Gotchas:
-- ⚠️ **Auto-scroll on every message** - Can cause layout thrash, use `smooth` behavior
-- ⚠️ **Long conversations** - Consider truncating UI to last 10 messages (backend handles full history)
-- ⚠️ **Framer Motion animations** - Use sparingly (only on modal open/close, not every message)
-- ⚠️ **API calls** - Debounce/throttle if implementing typing indicators (future feature)
+**Files Modified:**
+1. `macro-tracker/components/settings/ProfileSection.tsx`
+2. `macro-tracker/components/settings/DataPrivacySection.tsx`
+3. `macro-tracker/components/settings/DangerZoneSection.tsx`
+4. `macro-tracker/app/api/ai/chat/route.ts`
+5. `api/main.py`
+6. `api/dependencies/auth.py` (new file)
+7. `api/agent/settings.py`
+8. `macro-tracker/app/privacy/page.tsx` (new file)
+9. `macro-tracker/app/terms/page.tsx` (new file)
 
-### CORS Configuration (CRITICAL):
-```python
-# Add to api/main.py (after line 22)
-from fastapi.middleware.cors import CORSMiddleware
+**Files Created:**
+- `api/dependencies/auth.py` - JWT validation logic
+- `macro-tracker/app/privacy/page.tsx` - Privacy policy
+- `macro-tracker/app/terms/page.tsx` - Terms of service
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",  # Next.js dev
-        "https://your-domain.vercel.app"  # Production
-    ],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-```
-
-### Error Handling Scenarios:
-1. **Network failure** → Show error bubble with retry button
-2. **Session expired** → Redirect to login (should be rare, handled by Next.js middleware)
-3. **Python backend down** → Show "Service unavailable, try again later"
-4. **User_id lookup fails** → Show "Profile error, please refresh"
-5. **Rate limit hit** → Show "Too many requests, please wait"
-6. **Agent timeout (5s)** → Show "Request timeout, please try again"
-
-### Accessibility Requirements:
-- ✅ ARIA labels on all interactive elements
-- ✅ Keyboard navigation (Enter to send, Escape to close modal)
-- ✅ Focus management (auto-focus input on open, return focus on close)
-- ✅ Screen reader support (role="log" on message container, live regions)
-- ✅ Color contrast (all text meets WCAG AA)
-
-### Testing Considerations:
-- 🧪 **Manual testing checklist**:
-  - [ ] New user with no data → sees educational quick actions
-  - [ ] User with data → sees data-driven quick actions
-  - [ ] Send message → receives response
-  - [ ] Conversation memory works (follow-up questions have context)
-  - [ ] Error states display correctly
-  - [ ] Mobile responsive (test on real device)
-  - [ ] Loading states show during API calls
-  - [ ] Auto-scroll works smoothly
-  - [ ] Timestamps format correctly
-  - [ ] Modal opens/closes smoothly
-
-### Deployment Notes:
-- **Environment Variables** (Next.js):
-  - `NEXT_PUBLIC_SUPABASE_URL` - Already configured
-  - `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Already configured
-  - No new env vars needed for frontend
-- **Python Backend**:
-  - Must be running on localhost:8000 for dev
-  - Production: Deploy to Vercel Serverless or separate service
-  - Update CORS origins for production domain
-
-### Anti-Patterns to Avoid:
-- ❌ **Don't create new design patterns** - Use existing components/styles
-- ❌ **Don't use emojis** unless user explicitly requested (per CLAUDE.md)
-- ❌ **Don't create markdown files** unless explicitly required
-- ❌ **Don't use complex state management** - Keep it simple with useState
-- ❌ **Don't hardcode API URLs** - Use env vars or detect environment
-- ❌ **Don't skip error handling** - Every API call needs try/catch
-- ❌ **Don't ignore mobile UX** - Test on small screens early
-
-### Success Metrics:
-- ✅ User can click Bot button → modal opens
-- ✅ User can send message → receives AI response within 2s
-- ✅ Conversation history persists during session
-- ✅ Quick actions adapt to user's data state
-- ✅ Error states handle gracefully with retry
-- ✅ Design matches existing app perfectly
-- ✅ Mobile experience is smooth and usable
-- ✅ No console errors or warnings
+**No Database Migrations Needed:**
+All fixes work with existing schema. No migration files required.

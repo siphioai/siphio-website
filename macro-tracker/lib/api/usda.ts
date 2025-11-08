@@ -13,47 +13,181 @@ const NUTRIENT_IDS = {
   FAT: 1004        // Total lipid (fat) (g)
 };
 
+// Query expansion mapping for common single-word protein searches
+// Expands generic queries to specific cuts and preparations
+const COMMON_FOOD_EXPANSIONS: Record<string, string[]> = {
+  // Chicken variations
+  chicken: [
+    'chicken',
+    'chicken breast',
+    'chicken thigh',
+    'chicken drumstick',
+    'chicken leg',
+    'ground chicken'
+  ],
+
+  // Beef variations
+  beef: [
+    'beef',
+    'beef chuck',
+    'ground beef',
+    'beef sirloin',
+    'beef brisket',
+    'beef tenderloin'
+  ],
+
+  // Pork variations
+  pork: [
+    'pork',
+    'pork chop',
+    'pork tenderloin',
+    'ground pork',
+    'pork shoulder',
+    'pork loin'
+  ],
+
+  // Turkey variations
+  turkey: [
+    'turkey',
+    'turkey breast',
+    'ground turkey',
+    'turkey thigh',
+    'turkey leg'
+  ],
+
+  // Fish variations (generic)
+  fish: [
+    'fish',
+    'salmon',
+    'tilapia',
+    'cod',
+    'tuna',
+    'mahi'
+  ],
+
+  // Specific fish
+  salmon: [
+    'salmon',
+    'salmon fillet',
+    'salmon steak'
+  ],
+
+  tuna: [
+    'tuna',
+    'tuna steak',
+    'tuna fillet'
+  ]
+};
+
+/**
+ * Expands single-word protein queries into specific cut searches
+ * Multi-word queries are not expanded (assumed already specific)
+ *
+ * @example
+ * expandQuery("chicken") → ["chicken", "chicken breast", "chicken thigh", ...]
+ * expandQuery("chicken breast") → ["chicken breast"] (no expansion)
+ * expandQuery("rice") → ["rice"] (not in expansion map)
+ */
+function expandQuery(query: string): string[] {
+  const normalized = query.toLowerCase().trim();
+
+  // Don't expand if multi-word (already specific)
+  if (normalized.includes(' ')) {
+    return [query];
+  }
+
+  // Check if we have expansion rules for this query
+  if (COMMON_FOOD_EXPANSIONS[normalized]) {
+    return COMMON_FOOD_EXPANSIONS[normalized];
+  }
+
+  // No expansion needed, return original
+  return [query];
+}
+
+/**
+ * Removes duplicate foods by USDA FDC ID
+ * Keeps first occurrence of each unique FDC ID
+ *
+ * CRITICAL: USDA FDC ID is the unique identifier, not food name
+ * Same food can appear with slight variations across queries
+ */
+function deduplicateFoods(foods: any[]): any[] {
+  const seen = new Map<string, any>();
+
+  for (const food of foods) {
+    // Keep first occurrence only
+    if (!seen.has(food.usda_fdc_id)) {
+      seen.set(food.usda_fdc_id, food);
+    }
+  }
+
+  return Array.from(seen.values());
+}
+
 export async function searchFoods(query: string): Promise<FoodItem[]> {
   if (!query.trim()) return [];
 
+  // Expand query into multiple specific searches
+  const expandedQueries = expandQuery(query);
+
   const supabase = createClient();
 
-  // CRITICAL: Check cache first to avoid API rate limits
-  const { data: cached } = await supabase
-    .from('food_items')
-    .select('*')
-    .ilike('name', `%${query}%`)
-    .limit(10);
+  // Check cache for ALL expanded queries (parallel)
+  const cacheChecks = expandedQueries.map(async (q) => {
+    const { data } = await supabase
+      .from('food_items')
+      .select('*')
+      .ilike('name', `%${q}%`)
+      .limit(10);
+    return data || [];
+  });
 
-  if (cached && cached.length > 0) {
-    return filterAndSortResults(cached, query);
+  const cachedResults = (await Promise.all(cacheChecks)).flat();
+
+  if (cachedResults.length > 0) {
+    // Deduplicate and return cached results
+    const deduplicated = deduplicateFoods(cachedResults);
+    return filterAndSortResults(deduplicated, query);
   }
 
-  // Call USDA API
-  const url = new URL(`${USDA_API_BASE}/foods/search`);
-  url.searchParams.set('query', query);
-  url.searchParams.set('dataType', 'SR Legacy'); // Standard Reference only - most reliable
-  url.searchParams.set('pageSize', '50'); // Get more to filter from
-  if (USDA_API_KEY) {
-    url.searchParams.set('api_key', USDA_API_KEY);
-  }
+  // Make parallel API calls for all expanded queries
+  const apiCalls = expandedQueries.map(async (q) => {
+    try {
+      const url = new URL(`${USDA_API_BASE}/foods/search`);
+      url.searchParams.set('query', q);
+      url.searchParams.set('dataType', 'SR Legacy'); // Standard Reference only - most reliable
+      url.searchParams.set('pageSize', '50'); // Get more to filter from
+      if (USDA_API_KEY) {
+        url.searchParams.set('api_key', USDA_API_KEY);
+      }
 
-  const response = await fetch(url.toString());
-  if (!response.ok) {
-    throw new Error(`USDA API error: ${response.status}`);
-  }
+      const response = await fetch(url.toString());
+      if (!response.ok) {
+        console.warn(`USDA API error for query "${q}": ${response.status}`);
+        return []; // Return empty array on failure, don't fail entire request
+      }
 
-  const data: USDASearchResponse = await response.json();
+      const data: USDASearchResponse = await response.json();
+      return data.foods.map(normalizeUSDAFood);
+    } catch (error) {
+      console.warn(`Failed to fetch USDA data for query "${q}":`, error);
+      return []; // Graceful degradation
+    }
+  });
 
-  // Normalize all results
-  const normalized = data.foods.map(normalizeUSDAFood);
+  // Wait for all API calls to complete
+  const allResults = (await Promise.all(apiCalls)).flat();
 
-  // Filter and sort before caching
-  const filtered = filterAndSortResults(normalized, query);
+  // Deduplicate by FDC ID before filtering
+  const deduplicated = deduplicateFoods(allResults);
 
-  // CRITICAL: Upsert to cache (avoid duplicates)
-  if (filtered.length > 0) {
-    await supabase.from('food_items').upsert(filtered as any, {
+  // Filter and sort
+  const filtered = filterAndSortResults(deduplicated, query);
+
+  // Cache all deduplicated results (not just filtered top 10)
+  if (deduplicated.length > 0) {
+    await supabase.from('food_items').upsert(deduplicated as any, {
       onConflict: 'usda_fdc_id',
       ignoreDuplicates: false
     });
@@ -70,7 +204,10 @@ function filterAndSortResults(foods: any[], query: string): FoodItem[] {
   const excludeWords = [
     'snack', 'cracker', 'chip', 'cookie', 'cake', 'candy', 'cereal',
     'bar', 'mix', 'prepared', 'frozen meal', 'instant', 'canned',
-    'with sauce', 'flavored', 'seasoned', 'enriched', 'fortified'
+    'with sauce', 'flavored', 'seasoned', 'enriched', 'fortified',
+    // Stronger processed food indicators
+    'breaded', 'nugget', 'patty', 'battered', 'fried with coating',
+    'processed', 'formed', 'restructured'
   ];
 
   // Filter out unwanted foods
@@ -110,9 +247,45 @@ function filterAndSortResults(foods: any[], query: string): FoodItem[] {
     const commaCount = (food.name.match(/,/g) || []).length;
     score -= commaCount * 20;
 
-    // Prefer "cooked" or "raw" over complex preparations
-    if (nameLower.includes('cooked') || nameLower.includes('raw') || nameLower.includes('roasted')) {
-      score += 50;
+    // Whole food indicators (strong positive signals)
+    if (nameLower.includes('raw') || nameLower.includes('cooked') ||
+        nameLower.includes('roasted') || nameLower.includes('broiled') ||
+        nameLower.includes('grilled') || nameLower.includes('baked')) {
+      score += 200;
+    }
+
+    // Anatomy words (specific cuts = whole food)
+    const anatomyWords = [
+      'breast', 'thigh', 'leg', 'drumstick', 'wing',
+      'chuck', 'sirloin', 'tenderloin', 'brisket', 'round',
+      'chop', 'loin', 'shoulder', 'shank',
+      'fillet', 'steak'
+    ];
+    if (anatomyWords.some(word => nameLower.includes(word))) {
+      score += 150;
+    }
+
+    // Ground meat bonus (whole food)
+    if (nameLower.includes('ground')) {
+      score += 150;
+    }
+
+    // Common meat types
+    if (nameLower.includes('broilers or fryers')) { // Most common chicken type
+      score += 100;
+    }
+
+    // Simpler preparation bonus
+    if (nameLower.includes('meat only')) {
+      score += 75;
+    }
+
+    // Processed food penalties (strong negative signals)
+    // Note: Most are filtered out above, but this catches edge cases
+    if (nameLower.includes('breaded') || nameLower.includes('nugget') ||
+        nameLower.includes('patty') || nameLower.includes('battered') ||
+        nameLower.includes('processed') || nameLower.includes('formed')) {
+      score -= 500;
     }
 
     return { food, score };
