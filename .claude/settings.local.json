@@ -81,7 +81,8 @@
       "Bash(/c/Users/marley/stripe-cli/stripe.exe prices create:*)",
       "Bash(/c/Users/marley/stripe-cli/stripe.exe products create:*)",
       "Bash(/c/Users/marley/stripe-cli/stripe.exe listen --forward-to http://localhost:3000/api/stripe/webhook)",
-      "Bash(powershell.exe \"Stop-Process -Id 103168 -Force\")"
+      "Bash(powershell.exe \"Stop-Process -Id 103168 -Force\")",
+      "Bash(git commit:*)"
     ],
     "deny": []
   }
