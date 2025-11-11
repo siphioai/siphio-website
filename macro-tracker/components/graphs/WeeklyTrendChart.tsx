@@ -139,12 +139,12 @@ export function WeeklyTrendChart() {
                 {timeframeLabels[timeframe]} nutrition patterns
               </p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button
                 size="sm"
                 variant={viewMetric === 'all' ? 'default' : 'outline'}
                 onClick={() => setViewMetric('all')}
-                className="font-semibold"
+                className="font-semibold flex-shrink-0"
               >
                 All
               </Button>
@@ -152,7 +152,7 @@ export function WeeklyTrendChart() {
                 size="sm"
                 variant={viewMetric === 'calories' ? 'default' : 'outline'}
                 onClick={() => setViewMetric('calories')}
-                className="font-semibold"
+                className="font-semibold flex-shrink-0"
               >
                 🔥 Calories
               </Button>
@@ -160,7 +160,7 @@ export function WeeklyTrendChart() {
                 size="sm"
                 variant={viewMetric === 'protein' ? 'default' : 'outline'}
                 onClick={() => setViewMetric('protein')}
-                className="font-semibold"
+                className="font-semibold flex-shrink-0"
               >
                 💪 Protein
               </Button>

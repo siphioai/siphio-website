@@ -20,6 +20,7 @@ import { AlertTriangle, Loader2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
+import { getUserFriendlyError } from '@/lib/errors';
 
 export function DangerZoneSection() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -45,21 +46,44 @@ export function DangerZoneSection() {
           const { data: userData } = await supabase
             .from('users')
             .select('*')
-            .eq('auth_user_id', user.id)
+            .eq('auth_id', user.id)
             .single();
 
           if (userData) {
             const userId = (userData as any).id;
-            const [{ data: goals }, { data: logs }, { data: settings }] = await Promise.all([
-              supabase.from('daily_goals').select('*').eq('user_id', userId),
-              supabase.from('food_logs').select('*').eq('user_id', userId),
+            const [
+              { data: macroGoals },
+              { data: meals },
+              { data: dailySummary },
+              { data: favorites },
+              { data: settings }
+            ] = await Promise.all([
+              supabase.from('macro_goals').select('*').eq('user_id', userId),
+              supabase.from('meals').select('*').eq('user_id', userId),
+              supabase.from('daily_summary').select('*').eq('user_id', userId),
+              supabase.from('user_favorites').select('*').eq('user_id', userId),
               supabase.from('user_settings').select('*').eq('user_id', userId),
             ]);
 
+            // Query meal_items via meals relationship
+            const mealIds = meals?.map((m: any) => m.id) || [];
+            let mealItems: any[] = [];
+
+            if (mealIds.length > 0) {
+              const { data: items } = await supabase
+                .from('meal_items')
+                .select('*')
+                .in('meal_id', mealIds);
+              mealItems = items || [];
+            }
+
             const exportData = {
               user: userData,
-              goals: goals || [],
-              logs: logs || [],
+              macro_goals: macroGoals || [],
+              meals: meals || [],
+              meal_items: mealItems || [],
+              daily_summary: dailySummary || [],
+              favorites: favorites || [],
               settings: settings || [],
               exportedAt: new Date().toISOString(),
             };
@@ -86,7 +110,7 @@ export function DangerZoneSection() {
       const { data: userData } = await supabase
         .from('users')
         .select('id')
-        .eq('auth_user_id', user.id)
+        .eq('auth_id', user.id)
         .single();
 
       if (userData) {
@@ -104,7 +128,8 @@ export function DangerZoneSection() {
       toast.success('Account deleted successfully');
       router.push('/');
     } catch (error: any) {
-      toast.error(error.message || 'Failed to delete account');
+      console.error('Error deleting account:', error);
+      toast.error(getUserFriendlyError(error));
       setDeleting(false);
     }
   };

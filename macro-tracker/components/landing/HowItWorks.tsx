@@ -66,7 +66,7 @@ export function HowItWorks() {
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-100px" }}
-          className="grid md:grid-cols-3 gap-8"
+          className="grid md:grid-cols-3 gap-8 items-start"
         >
           {steps.map((step) => {
             const Icon = step.icon;
@@ -74,9 +74,9 @@ export function HowItWorks() {
               <motion.div
                 key={step.number}
                 variants={itemVariants}
-                className="relative"
+                className="relative h-full"
               >
-                <div className="flex flex-col items-center text-center">
+                <div className="flex flex-col items-center text-center h-full">
                   {/* Number badge */}
                   <div className={`w-16 h-16 rounded-full bg-gradient-to-br ${step.color} border-2 ${step.borderColor} flex items-center justify-center mb-4 shadow-lg`}>
                     <span className="text-2xl font-bold">{step.number}</span>
@@ -87,12 +87,14 @@ export function HowItWorks() {
                     <Icon className="w-10 h-10" />
                   </div>
 
-                  {/* Content */}
-                  <h3 className="text-2xl font-bold mb-3">{step.title}</h3>
-                  <p className="text-muted-foreground">{step.description}</p>
+                  {/* Content with fixed height */}
+                  <div className="flex flex-col items-center mb-6">
+                    <h3 className="text-2xl font-bold mb-3">{step.title}</h3>
+                    <p className="text-muted-foreground min-h-[48px]">{step.description}</p>
+                  </div>
 
                   {/* Placeholder for screenshot */}
-                  <div className={`mt-6 w-full aspect-video rounded-xl bg-gradient-to-br ${step.color} border ${step.borderColor} flex items-center justify-center shadow-lg`}>
+                  <div className={`mt-auto w-full aspect-video rounded-xl bg-gradient-to-br ${step.color} border ${step.borderColor} flex items-center justify-center shadow-lg`}>
                     <p className="text-sm text-muted-foreground">Screenshot placeholder</p>
                   </div>
                 </div>

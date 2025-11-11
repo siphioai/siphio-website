@@ -41,6 +41,12 @@ class Settings(BaseSettings):
     log_level: str = Field(default="INFO", description="Logging level")
     debug: bool = Field(default=False, description="Debug mode")
 
+    # CORS Configuration
+    frontend_url: str = Field(
+        default="http://localhost:3000",
+        description="Frontend application URL for CORS (production domain)"
+    )
+
     @field_validator("llm_api_key", "supabase_service_key")
     @classmethod
     def validate_api_keys(cls, v):

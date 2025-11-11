@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { ProfileSection } from '@/components/settings/ProfileSection';
 import { DisplaySection } from '@/components/settings/DisplaySection';
 import { AICoachSection } from '@/components/settings/AICoachSection';
+import { SubscriptionSection } from '@/components/settings/SubscriptionSection';
 import { DataPrivacySection } from '@/components/settings/DataPrivacySection';
 import { DangerZoneSection } from '@/components/settings/DangerZoneSection';
 
@@ -37,6 +38,7 @@ export default function SettingsPage() {
           <ProfileSection />
           <DisplaySection />
           <AICoachSection />
+          <SubscriptionSection />
           <DataPrivacySection />
           <DangerZoneSection />
         </div>

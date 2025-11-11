@@ -2,19 +2,24 @@
 FastAPI main application for AI Nutrition Coach.
 """
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from typing import List, Dict, Any, Optional
 import logging
 from agent.coach_agent import nutrition_coach
 from agent.dependencies import CoachAgentDependencies
+from agent.settings import load_settings
 from database.supabase import get_supabase_client
+from dependencies.auth import get_current_user_id
 from pydantic_ai.messages import ModelMessagesTypeAdapter
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Load settings
+settings = load_settings()
 
 app = FastAPI(
     title="Nutrition Coach AI",
@@ -22,23 +27,28 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Configure CORS for frontend integration
+# Build allowed origins based on environment
+allowed_origins = [
+    "http://localhost:3000",  # Always allow localhost for development
+]
+
+# Add production domain if in production environment
+if settings.app_env == "production":
+    allowed_origins.append(settings.frontend_url)
+
+# Configure CORS middleware with environment-aware origins
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",              # Next.js dev
-        "https://*.vercel.app",               # Production
-        "https://your-domain.vercel.app"      # Production domain
-    ],
+    allow_origins=allowed_origins,  # No wildcards, explicit domains only
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["POST"],  # Only POST needed for /api/chat
+    allow_headers=["Content-Type", "Authorization"],  # Include Authorization
+    max_age=3600,  # Cache preflight requests for 1 hour
 )
 
 
 class ChatRequest(BaseModel):
-    """Request model for chat endpoint."""
-    user_id: str = Field(..., description="Authenticated user ID")
+    """Request model for chat endpoint - user_id extracted from JWT."""
     message: str = Field(..., min_length=1, max_length=1000)
     conversation_history: Optional[List[Dict[str, Any]]] = Field(
         default=[],
@@ -54,12 +64,16 @@ class ChatResponse(BaseModel):
 
 
 @app.post("/api/chat", response_model=ChatResponse)
-async def chat(request: ChatRequest):
+async def chat(
+    request: ChatRequest,
+    user_id: str = Depends(get_current_user_id)
+):
     """
-    Main chat endpoint for nutrition coach agent.
+    Main chat endpoint for nutrition coach agent with JWT authentication.
 
     Args:
-        request: Chat request with user_id, message, and optional conversation history
+        request: Chat request with message and optional conversation history
+        user_id: Validated user ID extracted from JWT token (via dependency)
 
     Returns:
         Chat response with agent reply, updated conversation history, and usage stats
@@ -68,10 +82,10 @@ async def chat(request: ChatRequest):
         # Create Supabase client
         supabase = await get_supabase_client()
 
-        # Create agent dependencies
+        # Create agent dependencies with VALIDATED user_id from JWT
         deps = CoachAgentDependencies(
             supabase=supabase,
-            user_id=request.user_id
+            user_id=user_id  # Guaranteed valid - came from JWT
         )
 
         # Deserialize conversation history if provided

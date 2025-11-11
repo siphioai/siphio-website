@@ -9,6 +9,7 @@ import { Loader2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { getUserFriendlyError } from '@/lib/errors';
 
 export function ProfileSection() {
   const [name, setName] = useState('');
@@ -32,7 +33,7 @@ export function ProfileSection() {
       const { data: userData } = await supabase
         .from('users')
         .select('name, created_at')
-        .eq('auth_user_id', user.id)
+        .eq('auth_id', user.id)
         .single();
 
       if (userData) {
@@ -41,6 +42,7 @@ export function ProfileSection() {
       }
     } catch (error) {
       console.error('Error loading profile:', error);
+      toast.error(getUserFriendlyError(error));
     } finally {
       setLoading(false);
     }
@@ -55,7 +57,7 @@ export function ProfileSection() {
       const { data: userData } = await supabase
         .from('users')
         .select('id')
-        .eq('auth_user_id', user.id)
+        .eq('auth_id', user.id)
         .single();
 
       if (!userData) throw new Error('User not found');
@@ -69,7 +71,8 @@ export function ProfileSection() {
 
       toast.success('Profile updated successfully');
     } catch (error: any) {
-      toast.error(error.message || 'Failed to update profile');
+      console.error('Error updating profile:', error);
+      toast.error(getUserFriendlyError(error));
     } finally {
       setSaving(false);
     }

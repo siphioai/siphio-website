@@ -90,6 +90,18 @@ export function AINutritionCoach({ open, onOpenChange }: AINutritionCoachProps) 
         }
       }
     }
+
+    // Listen for clear events from settings page
+    const handleClearEvent = () => {
+      setMessages([]);
+      setConversationHistory([]);
+      setError(null);
+    };
+
+    window.addEventListener('ai-coach-clear', handleClearEvent);
+    return () => {
+      window.removeEventListener('ai-coach-clear', handleClearEvent);
+    };
   }, [open]);
 
   // Save conversation to sessionStorage on change

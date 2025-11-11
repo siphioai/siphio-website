@@ -1,16 +1,20 @@
 'use client';
 
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Download, Trash2 } from 'lucide-react';
+import { Download, Trash2, Loader2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
+import { getUserFriendlyError } from '@/lib/errors';
 
 export function DataPrivacySection() {
   const supabase = createClient();
+  const [exporting, setExporting] = useState(false);
 
   const handleExportData = async () => {
     try {
+      setExporting(true);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
@@ -18,28 +22,47 @@ export function DataPrivacySection() {
       const { data: userData } = await supabase
         .from('users')
         .select('*')
-        .eq('auth_user_id', user.id)
+        .eq('auth_id', user.id)
         .single();
 
       if (!userData) throw new Error('User data not found');
 
       const userId = (userData as any).id;
 
-      // Get all user-related data
+      // Get all user-related data with correct table names
       const [
-        { data: goals },
-        { data: logs },
+        { data: macroGoals },
+        { data: meals },
+        { data: dailySummary },
+        { data: favorites },
         { data: settings },
       ] = await Promise.all([
-        supabase.from('daily_goals').select('*').eq('user_id', userId),
-        supabase.from('food_logs').select('*').eq('user_id', userId),
+        supabase.from('macro_goals').select('*').eq('user_id', userId),
+        supabase.from('meals').select('*').eq('user_id', userId),
+        supabase.from('daily_summary').select('*').eq('user_id', userId),
+        supabase.from('user_favorites').select('*').eq('user_id', userId),
         supabase.from('user_settings').select('*').eq('user_id', userId),
       ]);
 
+      // Query meal_items via meals relationship (no direct user_id)
+      const mealIds = meals?.map((m: any) => m.id) || [];
+      let mealItems: any[] = [];
+
+      if (mealIds.length > 0) {
+        const { data: items } = await supabase
+          .from('meal_items')
+          .select('*')
+          .in('meal_id', mealIds);
+        mealItems = items || [];
+      }
+
       const exportData = {
         user: userData,
-        goals: goals || [],
-        logs: logs || [],
+        macro_goals: macroGoals || [],
+        meals: meals || [],
+        meal_items: mealItems || [],
+        daily_summary: dailySummary || [],
+        favorites: favorites || [],
         settings: settings || [],
         exportedAt: new Date().toISOString(),
       };
@@ -59,7 +82,10 @@ export function DataPrivacySection() {
 
       toast.success('Data exported successfully');
     } catch (error: any) {
-      toast.error(error.message || 'Failed to export data');
+      console.error('Error exporting data:', error);
+      toast.error(getUserFriendlyError(error));
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -86,9 +112,9 @@ export function DataPrivacySection() {
               Download all your data in JSON format
             </p>
           </div>
-          <Button variant="outline" size="sm" onClick={handleExportData}>
-            <Download className="mr-2 h-4 w-4" />
-            Export
+          <Button variant="outline" size="sm" onClick={handleExportData} disabled={exporting}>
+            {exporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+            {exporting ? 'Exporting...' : 'Export'}
           </Button>
         </div>
 

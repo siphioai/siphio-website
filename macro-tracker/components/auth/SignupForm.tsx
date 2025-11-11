@@ -11,7 +11,7 @@ import { createClient } from '@/lib/supabase/client';
 
 const benefits = [
   'Unlimited food logging',
-  'AI coach built in',
+  '20 free AI messages',
   '300,000+ verified foods',
   'No credit card required'
 ];

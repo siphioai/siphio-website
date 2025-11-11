@@ -389,14 +389,14 @@ export function QuickAddFood({ onAddFood }: QuickAddFoodProps) {
       {/* Content */}
       <div className="space-y-2 max-h-96 overflow-y-auto">
         {activeTab === 'search' && results.length > 0 && (
-          <>
+          <div key="search-results">
             <p className="text-xs text-muted-foreground mb-2">
               Found {results.length} result{results.length !== 1 ? 's' : ''} - Click to add
             </p>
             {results.map((food) => (
               <FoodCard key={food.id} food={{ ...food, is_favorite: favorites.some(f => f.id === food.id) }} />
             ))}
-          </>
+          </div>
         )}
 
         {activeTab === 'favorites' && (

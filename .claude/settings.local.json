@@ -66,7 +66,22 @@
       "Bash(timeout 10 bash:*)",
       "Bash(powershell.exe \"Stop-Process -Id 4516 -Force\")",
       "Bash(npx shadcn@latest add:*)",
-      "Bash(../api/venv/Scripts/uvicorn.exe:*)"
+      "Bash(../api/venv/Scripts/uvicorn.exe:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nfix: BEFORE FINAL BUG FIXES\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git push:*)",
+      "Bash(claude mcp add:*)",
+      "Bash(powershell.exe \"Stop-Process -Id 113964 -Force\")",
+      "Bash(where:*)",
+      "Bash(powershell.exe -Command \"Invoke-WebRequest -Uri ''https://github.com/stripe/stripe-cli/releases/download/v1.22.0/stripe_1.22.0_windows_x86_64.zip'' -OutFile ''C:\\Users\\marley\\stripe-cli.zip''\")",
+      "Bash(powershell.exe -Command \"Expand-Archive -Path ''C:\\Users\\marley\\stripe-cli.zip'' -DestinationPath ''C:\\Users\\marley\\stripe-cli'' -Force\")",
+      "Bash(C:Usersmarleystripe-clistripe.exe --version)",
+      "Bash(/c/Users/marley/stripe-cli/stripe.exe --version)",
+      "Bash(/c/Users/marley/stripe-cli/stripe.exe login)",
+      "Bash(/c/Users/marley/stripe-cli/stripe.exe products create --name=\"Monthly Premium\" --description=\"Premium subscription - unlimited AI coaching\")",
+      "Bash(/c/Users/marley/stripe-cli/stripe.exe prices create:*)",
+      "Bash(/c/Users/marley/stripe-cli/stripe.exe products create:*)",
+      "Bash(/c/Users/marley/stripe-cli/stripe.exe listen --forward-to http://localhost:3000/api/stripe/webhook)",
+      "Bash(powershell.exe \"Stop-Process -Id 103168 -Force\")"
     ],
     "deny": []
   }
