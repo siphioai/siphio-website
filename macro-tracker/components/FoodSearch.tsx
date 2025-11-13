@@ -7,7 +7,14 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Search, Sparkles, Package } from 'lucide-react';
+import { Search, Sparkles, Package, Zap } from 'lucide-react';
+import {
+  searchLocalCache,
+  addToRecentFoods,
+  mergeAndRankResults,
+  getCachedSearchResults,
+  cacheSearchResults
+} from '@/lib/services/food-cache';
 
 interface FoodSearchProps {
   onSelectFood: (food: FoodItem, quantityG: number) => void;
@@ -17,21 +24,31 @@ interface FoodSearchProps {
 export function FoodSearch({ onSelectFood, userId }: FoodSearchProps) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<any[]>([]);
+  const [localResults, setLocalResults] = useState<any[]>([]);
   const [selectedFood, setSelectedFood] = useState<any | null>(null);
   const [quantity, setQuantity] = useState('100');
   const [searching, setSearching] = useState(false);
+  const [showingLocal, setShowingLocal] = useState(false);
 
-  // Live Search with debouncing
+  // Instant local predictions (no debounce)
   useEffect(() => {
     if (!query.trim() || query.length < 2) {
+      setLocalResults([]);
       setResults([]);
+      setShowingLocal(false);
       return;
     }
 
+    // Immediate local search
+    const local = searchLocalCache(query);
+    setLocalResults(local);
+    setShowingLocal(local.length > 0);
+
+    // Debounced API search
     setSearching(true);
     const timer = setTimeout(() => {
       handleSearch();
-    }, 500); // 500ms debounce
+    }, 500); // 500ms debounce for API
 
     return () => clearTimeout(timer);
   }, [query]);
@@ -40,6 +57,16 @@ export function FoodSearch({ onSelectFood, userId }: FoodSearchProps) {
     if (!query.trim() || query.length < 2) return;
 
     try {
+      // Check session cache first
+      const cached = getCachedSearchResults(query);
+      if (cached) {
+        const merged = mergeAndRankResults(localResults, cached, query);
+        setResults(merged);
+        setShowingLocal(false);
+        setSearching(false);
+        return;
+      }
+
       const response = await fetch('/api/food-search/hybrid', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -52,13 +79,23 @@ export function FoodSearch({ onSelectFood, userId }: FoodSearchProps) {
 
       const data = await response.json();
       if (data.success) {
-        setResults(data.foods || []);
+        const apiResults = data.foods || [];
+
+        // Cache the API results
+        cacheSearchResults(query, apiResults);
+
+        // Merge local cache with API results
+        const merged = mergeAndRankResults(localResults, apiResults, query);
+        setResults(merged);
+        setShowingLocal(false);
       } else {
-        setResults([]);
+        setResults(localResults); // Fall back to local results
+        setShowingLocal(false);
       }
     } catch (error) {
       console.error('Search error:', error);
-      setResults([]);
+      setResults(localResults); // Fall back to local results
+      setShowingLocal(false);
     } finally {
       setSearching(false);
     }
@@ -79,6 +116,9 @@ export function FoodSearch({ onSelectFood, userId }: FoodSearchProps) {
       };
 
       onSelectFood(foodItem, Number(quantity));
+
+      // Add to local cache for future instant predictions
+      addToRecentFoods(selectedFood, query);
 
       // Track selection analytics if userId is provided
       if (userId && selectedFood.id) {
@@ -113,13 +153,22 @@ export function FoodSearch({ onSelectFood, userId }: FoodSearchProps) {
         </Button>
       </div>
 
-      {results.length > 0 && (
+      {(showingLocal ? localResults : results).length > 0 && (
         <div className="space-y-2 max-h-96 overflow-y-auto">
           <p className="text-xs text-muted-foreground mb-2 flex items-center gap-2">
-            <Search className="h-3 w-3" />
-            Found {results.length} result{results.length !== 1 ? 's' : ''} - Click to add
+            {showingLocal ? (
+              <>
+                <Zap className="h-3 w-3 text-amber-500" />
+                {localResults.length} instant prediction{localResults.length !== 1 ? 's' : ''} from your recent searches
+              </>
+            ) : (
+              <>
+                <Search className="h-3 w-3" />
+                Found {results.length} result{results.length !== 1 ? 's' : ''} - Click to add
+              </>
+            )}
           </p>
-          {results.map((food) => (
+          {(showingLocal ? localResults : results).map((food) => (
             <Card
               key={food.id || food.fdc_id}
               className="p-4 cursor-pointer hover:bg-accent/50 hover:border-primary/50 transition-all duration-150"
@@ -128,10 +177,17 @@ export function FoodSearch({ onSelectFood, userId }: FoodSearchProps) {
               <div className="flex items-start justify-between mb-1">
                 <h4 className="font-semibold text-sm">{food.display_name || food.name}</h4>
                 <div className="flex gap-1">
-                  <Badge variant="secondary" className="text-xs flex items-center gap-1">
-                    <Sparkles className="h-3 w-3" />
-                    Edamam
-                  </Badge>
+                  {food._source === 'local' ? (
+                    <Badge variant="default" className="text-xs flex items-center gap-1 bg-amber-500/90">
+                      <Zap className="h-3 w-3" />
+                      Recent
+                    </Badge>
+                  ) : (
+                    <Badge variant="secondary" className="text-xs flex items-center gap-1">
+                      <Sparkles className="h-3 w-3" />
+                      Edamam
+                    </Badge>
+                  )}
                   {food.brand && (
                     <Badge variant="outline" className="text-xs flex items-center gap-1">
                       <Package className="h-3 w-3" />

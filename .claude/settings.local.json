@@ -94,7 +94,8 @@
       "Bash(xargs kill -9)",
       "Bash(pkill:*)",
       "Bash(npm run typecheck:*)",
-      "Bash(pbcopy)"
+      "Bash(pbcopy)",
+      "Bash(git init:*)"
     ],
     "deny": []
   }

@@ -6,10 +6,17 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Star, Clock, Search } from 'lucide-react';
+import { Star, Clock, Search, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
 import { SmartQuantityHint } from '@/components/SmartQuantityHint';
+import {
+  searchLocalCache,
+  addToRecentFoods,
+  mergeAndRankResults,
+  getCachedSearchResults,
+  cacheSearchResults
+} from '@/lib/services/food-cache';
 
 interface FoodItem {
   id: string;
@@ -35,12 +42,14 @@ interface QuickAddFoodProps {
 export function QuickAddFood({ onAddFood }: QuickAddFoodProps) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<FoodItem[]>([]);
+  const [localResults, setLocalResults] = useState<any[]>([]);
   const [smartSuggestions, setSmartSuggestions] = useState<QuickFood[]>([]);
   const [favorites, setFavorites] = useState<QuickFood[]>([]);
   const [recents, setRecents] = useState<QuickFood[]>([]);
   const [selectedFood, setSelectedFood] = useState<QuickFood | null>(null);
   const [quantity, setQuantity] = useState('100');
   const [searching, setSearching] = useState(false);
+  const [showingLocal, setShowingLocal] = useState(false);
   const [activeTab, setActiveTab] = useState<'search' | 'favorites' | 'recent'>('search');
   const supabase = createClient();
 
@@ -50,19 +59,26 @@ export function QuickAddFood({ onAddFood }: QuickAddFoodProps) {
     loadRecents();
   }, []);
 
-  // Real-time search as user types (debounced)
+  // Real-time search with instant local predictions
   useEffect(() => {
     if (!query.trim()) {
       // Show smart suggestions when empty
       setResults(smartSuggestions || []);
+      setLocalResults([]);
+      setShowingLocal(false);
       setSearching(false);
       return;
     }
 
+    // Immediate local search (no debounce)
+    const local = searchLocalCache(query);
+    setLocalResults(local);
+    setShowingLocal(local.length > 0);
+
     // Show searching indicator immediately
     setSearching(true);
 
-    // Debounce search by 400ms for smoother experience
+    // Debounce API search by 400ms for smoother experience
     const timer = setTimeout(() => {
       handleSearch();
     }, 400);
@@ -189,13 +205,38 @@ export function QuickAddFood({ onAddFood }: QuickAddFoodProps) {
     setSearching(true);
 
     try {
-      // Use unified search API (Postgres FTS + branded foods)
+      // Check session cache first
+      const cached = getCachedSearchResults(query);
+      if (cached) {
+        const merged = mergeAndRankResults(localResults, cached, query);
+        setResults(merged);
+        setShowingLocal(false);
+        setSearching(false);
+        return;
+      }
+
+      // Use unified search API (Edamam)
       const response = await fetch(`/api/food-search/unified?query=${encodeURIComponent(query)}`);
       const data = await response.json();
-      setResults(data.foods || []);
+
+      if (data.success && data.foods) {
+        const apiResults = data.foods;
+
+        // Cache the API results
+        cacheSearchResults(query, apiResults);
+
+        // Merge local cache with API results
+        const merged = mergeAndRankResults(localResults, apiResults, query);
+        setResults(merged);
+        setShowingLocal(false);
+      } else {
+        setResults(localResults); // Fall back to local
+        setShowingLocal(false);
+      }
     } catch (error) {
       console.error('Search error:', error);
-      setResults([]);
+      setResults(localResults); // Fall back to local
+      setShowingLocal(false);
     } finally {
       setSearching(false);
     }
@@ -315,6 +356,9 @@ export function QuickAddFood({ onAddFood }: QuickAddFoodProps) {
   const handleAdd = async () => {
     if (selectedFood && Number(quantity) > 0) {
       await onAddFood(selectedFood.id, Number(quantity));
+
+      // Add to local cache for future instant predictions
+      addToRecentFoods(selectedFood, query);
 
       // Update last quantity in favorites if it exists
       if (selectedFood.is_favorite) {
