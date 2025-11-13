@@ -291,8 +291,29 @@ function filterAndSortResults(foods: any[], query: string): FoodItem[] {
     return { food, score };
   });
 
-  // Sort by score descending and take top 10
-  return scored
+  // Sort by score descending first
+  scored.sort((a, b) => b.score - a.score);
+
+  // Apply diversity boost - prioritize different display_names
+  const seenDisplayNames = new Set<string>();
+  const diversityBoosted = scored.map(item => {
+    const displayName = item.food.display_name || item.food.name;
+    let diversityScore = item.score;
+
+    if (!seenDisplayNames.has(displayName)) {
+      // First occurrence of this display name - BIG boost
+      diversityScore += 500;
+      seenDisplayNames.add(displayName);
+    } else {
+      // Duplicate display name - PENALTY
+      diversityScore -= 300;
+    }
+
+    return { ...item, score: diversityScore };
+  });
+
+  // Re-sort with diversity scores and take top 10
+  return diversityBoosted
     .sort((a, b) => b.score - a.score)
     .slice(0, 10)
     .map(item => item.food);

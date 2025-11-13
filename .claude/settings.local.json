@@ -82,7 +82,19 @@
       "Bash(/c/Users/marley/stripe-cli/stripe.exe products create:*)",
       "Bash(/c/Users/marley/stripe-cli/stripe.exe listen --forward-to http://localhost:3000/api/stripe/webhook)",
       "Bash(powershell.exe \"Stop-Process -Id 103168 -Force\")",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(uvicorn:*)",
+      "Bash(python3:*)",
+      "Bash(pip install:*)",
+      "Bash(/dev/null)",
+      "Bash(PYTHONPATH=/Users/marley/siphio-website uvicorn:*)",
+      "Bash(open http://localhost:3000)",
+      "Bash(lsof:*)",
+      "Bash(npx tsx:*)",
+      "Bash(xargs kill -9)",
+      "Bash(pkill:*)",
+      "Bash(npm run typecheck:*)",
+      "Bash(pbcopy)"
     ],
     "deny": []
   }

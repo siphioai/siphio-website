@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Star, Clock, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
+import { SmartQuantityHint } from '@/components/SmartQuantityHint';
 
 interface FoodItem {
   id: string;
@@ -21,7 +22,10 @@ interface FoodItem {
 
 interface QuickFood extends FoodItem {
   last_quantity_g?: number;
+  typical_quantity_g?: number;
   is_favorite?: boolean;
+  log_count?: number;
+  smart_score?: number;
 }
 
 interface QuickAddFoodProps {
@@ -31,6 +35,7 @@ interface QuickAddFoodProps {
 export function QuickAddFood({ onAddFood }: QuickAddFoodProps) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<FoodItem[]>([]);
+  const [smartSuggestions, setSmartSuggestions] = useState<QuickFood[]>([]);
   const [favorites, setFavorites] = useState<QuickFood[]>([]);
   const [recents, setRecents] = useState<QuickFood[]>([]);
   const [selectedFood, setSelectedFood] = useState<QuickFood | null>(null);
@@ -40,9 +45,45 @@ export function QuickAddFood({ onAddFood }: QuickAddFoodProps) {
   const supabase = createClient();
 
   useEffect(() => {
+    loadSmartSuggestions();
     loadFavorites();
     loadRecents();
   }, []);
+
+  // Real-time search as user types (debounced)
+  useEffect(() => {
+    if (!query.trim()) {
+      // Show smart suggestions when empty
+      setResults(smartSuggestions || []);
+      setSearching(false);
+      return;
+    }
+
+    // Show searching indicator immediately
+    setSearching(true);
+
+    // Debounce search by 400ms for smoother experience
+    const timer = setTimeout(() => {
+      handleSearch();
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [query, smartSuggestions]);
+
+  const loadSmartSuggestions = async () => {
+    try {
+      const response = await fetch('/api/food-search/smart-suggestions');
+      const data = await response.json();
+      setSmartSuggestions(data.suggestions || []);
+
+      // Auto-populate search results with smart suggestions
+      if (activeTab === 'search' && !query) {
+        setResults(data.suggestions || []);
+      }
+    } catch (error) {
+      console.error('Error loading smart suggestions:', error);
+    }
+  };
 
   const loadFavorites = async () => {
     try {
@@ -139,14 +180,25 @@ export function QuickAddFood({ onAddFood }: QuickAddFoodProps) {
   };
 
   const handleSearch = async () => {
-    if (!query.trim()) return;
+    if (!query.trim()) {
+      // Show smart suggestions when empty
+      setResults(smartSuggestions || []);
+      return;
+    }
 
     setSearching(true);
-    const response = await fetch(`/api/usda?query=${encodeURIComponent(query)}`);
-    const data = await response.json();
-    setResults(data.foods || []);
-    setSearching(false);
-    setActiveTab('search');
+
+    try {
+      // Use unified search API (Postgres FTS + branded foods)
+      const response = await fetch(`/api/food-search/unified?query=${encodeURIComponent(query)}`);
+      const data = await response.json();
+      setResults(data.foods || []);
+    } catch (error) {
+      console.error('Search error:', error);
+      setResults([]);
+    } finally {
+      setSearching(false);
+    }
   };
 
   const triggerConfetti = (element: HTMLElement) => {
@@ -253,8 +305,11 @@ export function QuickAddFood({ onAddFood }: QuickAddFoodProps) {
   };
 
   const handleQuickAdd = (food: QuickFood) => {
+    // Smart quantity: Get user's typical amount
+    const smartQty = food.typical_quantity_g || food.last_quantity_g || 100;
+
     setSelectedFood(food);
-    setQuantity((food.last_quantity_g || 100).toString());
+    setQuantity(smartQty.toString());
   };
 
   const handleAdd = async () => {
@@ -291,25 +346,29 @@ export function QuickAddFood({ onAddFood }: QuickAddFoodProps) {
     }
   };
 
-  const FoodCard = ({ food, showFavorite = true }: { food: QuickFood; showFavorite?: boolean }) => (
-    <Card
-      className="p-4 cursor-pointer hover:bg-accent/50 hover:border-primary/50 transition-all duration-150 relative group"
-      onClick={() => handleQuickAdd(food)}
-    >
-      {showFavorite && (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            toggleFavorite(food.id, e);
-          }}
-          className="absolute top-2 right-2 p-2 rounded-full hover:bg-secondary transition-colors"
-        >
-          <Star
-            className={`w-4 h-4 ${food.is_favorite || favorites.some(f => f.id === food.id) ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'}`}
-          />
-        </button>
-      )}
-      <h4 className="font-semibold text-sm mb-1 pr-8">{food.name}</h4>
+  const FoodCard = ({ food, showFavorite = true }: { food: QuickFood; showFavorite?: boolean }) => {
+    // Prefer display_name over name for cleaner UI
+    const displayName = (food as any).display_name || food.name;
+
+    return (
+      <Card
+        className="p-4 cursor-pointer hover:bg-accent/50 hover:border-primary/50 transition-all duration-150 relative group"
+        onClick={() => handleQuickAdd(food)}
+      >
+        {showFavorite && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleFavorite(food.id, e);
+            }}
+            className="absolute top-2 right-2 p-2 rounded-full hover:bg-secondary transition-colors"
+          >
+            <Star
+              className={`w-4 h-4 ${food.is_favorite || favorites.some(f => f.id === food.id) ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'}`}
+            />
+          </button>
+        )}
+        <h4 className="font-semibold text-sm mb-1 pr-8">{displayName}</h4>
       <div className="flex gap-3 text-xs text-muted-foreground">
         <span className="font-medium">Per 100g:</span>
         <span className="text-primary font-semibold">{food.calories_per_100g} cal</span>
@@ -317,24 +376,26 @@ export function QuickAddFood({ onAddFood }: QuickAddFoodProps) {
         <span>C: {food.carbs_per_100g}g</span>
         <span>F: {food.fat_per_100g}g</span>
       </div>
-      {food.last_quantity_g && (
-        <p className="text-xs text-muted-foreground mt-1">Last used: {food.last_quantity_g}g</p>
-      )}
-    </Card>
-  );
+        {food.last_quantity_g && (
+          <p className="text-xs text-muted-foreground mt-1">Last used: {food.last_quantity_g}g</p>
+        )}
+      </Card>
+    );
+  };
 
   return (
     <div className="space-y-4">
       {/* Search Bar */}
       <div className="flex gap-2">
         <Input
-          placeholder="Search foods (e.g., chicken breast, basmati rice)"
+          placeholder="Start typing to search... (e.g., chicken, rice)"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
           className="flex-1"
+          autoFocus
         />
-        <Button onClick={handleSearch} disabled={searching || !query.trim()} className="gap-2">
+        <Button onClick={handleSearch} disabled={searching} className="gap-2">
           <Search className="w-4 h-4" />
           {searching ? 'Searching...' : 'Search'}
         </Button>
@@ -460,6 +521,13 @@ export function QuickAddFood({ onAddFood }: QuickAddFoodProps) {
             )}
             <div>
               <label className="text-sm font-semibold mb-2 block">Quantity (grams)</label>
+              {selectedFood && (selectedFood.typical_quantity_g || selectedFood.last_quantity_g) && (
+                <SmartQuantityHint
+                  quantity={selectedFood.typical_quantity_g || selectedFood.last_quantity_g || 100}
+                  source={selectedFood.is_favorite ? 'favorite' : 'last_used'}
+                  logCount={selectedFood.log_count}
+                />
+              )}
               <Input
                 type="number"
                 value={quantity}
