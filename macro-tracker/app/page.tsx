@@ -9,7 +9,7 @@ import { StreakCalendar } from '@/components/graphs/StreakCalendar';
 import { FoodLog } from '@/components/FoodLog';
 import { AINutritionCoach } from '@/components/AINutritionCoach';
 import { Button } from '@/components/ui/button';
-import { Bot, Settings } from 'lucide-react';
+import { Bot, Settings, ChefHat } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useSubscription } from '@/lib/hooks/useSubscription';
 import { PremiumBadge } from '@/components/subscription/PremiumBadge';
@@ -49,8 +49,18 @@ export default function Home() {
               variant="outline"
               className="h-12 w-12 p-2"
               onClick={() => router.push('/settings')}
+              title="Settings"
             >
               <Settings className="w-full h-full" />
+            </Button>
+            <Button
+              size="lg"
+              variant="outline"
+              className="h-12 w-12 p-2"
+              onClick={() => router.push('/meal-plans')}
+              title="Meal Plans"
+            >
+              <ChefHat className="w-full h-full" />
             </Button>
             <div className="relative">
               <Button

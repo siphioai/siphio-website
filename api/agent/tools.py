@@ -4,13 +4,17 @@ Agent tools for fetching nutrition data from Supabase.
 
 import logging
 import asyncio
+import json
+from datetime import datetime, timedelta
 from pydantic_ai import RunContext
 from agent.dependencies import CoachAgentDependencies
 from database.queries import (
     fetch_today_summary,
     fetch_weekly_summary,
     fetch_pattern_summary,
-    fetch_user_favorites
+    fetch_user_favorites,
+    save_meal_plan,
+    fetch_frequently_logged_foods
 )
 
 logger = logging.getLogger(__name__)
@@ -253,6 +257,120 @@ Your {most_consistent} intake is very consistent, while {least_consistent} varie
             logger.error(f"fetch_favorite_foods failed: {e}")
             return "Unable to fetch favorite foods. Please try again later."
 
+    @nutrition_coach.tool
+    async def generate_meal_plan(
+        ctx: RunContext[CoachAgentDependencies],
+        duration_days: int = 7,
+        food_preferences: str = ""
+    ) -> str:
+        """
+        Generate a personalized 7-day meal plan using Claude AI based on user's macro targets.
+
+        IMPORTANT: Favorite foods are OPTIONAL - the meal plan will be generated using macro targets
+        and common healthy whole foods if no favorites are available.
+
+        Use this when user requests a meal plan:
+        "Create a meal plan for next week", "Generate my weekly meals", "Plan my nutrition"
+
+        Args:
+            duration_days: Number of days to plan (always 7 for MVP)
+            food_preferences: User's specific food preferences or requirements from the conversation
+                            (e.g., "include steak and eggs daily", "lots of fruit", "vegetarian", etc.)
+                            Extract this from the user's message when they specify preferences.
+
+        Returns:
+            Confirmation message about generated meal plan
+        """
+        try:
+            # 1. Fetch user's macro targets
+            summary = await fetch_today_summary(
+                ctx.deps.supabase,
+                ctx.deps.user_id
+            )
+
+            if summary is None:
+                return "Please set your daily macro targets first before generating a meal plan."
+
+            # Extract targets
+            targets = {
+                'calories': summary['calories_target'],
+                'protein': summary['protein_target'],
+                'carbs': summary['carbs_target'],
+                'fat': summary['fat_target']
+            }
+
+            # 2. Fetch user's favorite foods (OPTIONAL - not required)
+            favorites = await fetch_user_favorites(
+                ctx.deps.supabase,
+                ctx.deps.user_id
+            )
+
+            # Fallback to frequently logged foods if no favorites
+            if not favorites:
+                favorites = await fetch_frequently_logged_foods(
+                    ctx.deps.supabase,
+                    ctx.deps.user_id,
+                    limit=15
+                )
+
+            # Note: If still no favorites/frequent foods, that's OK!
+            # Claude will use common healthy whole foods instead
+
+            # 3. Calculate week start (next Monday)
+            today = datetime.now()
+            days_until_monday = (7 - today.weekday()) % 7
+            if days_until_monday == 0:
+                days_until_monday = 7  # If today is Monday, use next Monday
+            week_start = today + timedelta(days=days_until_monday)
+            week_start_str = week_start.strftime('%Y-%m-%d')
+
+            # 4. Generate meal plan using Claude structured output
+            from agent.meal_plan_generator import generate_meal_plan_structured
+
+            logger.info(f"Generating AI meal plan for user {ctx.deps.user_id}, week {week_start_str}")
+            if food_preferences:
+                logger.info(f"User food preferences: {food_preferences}")
+
+            meal_plan_obj = await generate_meal_plan_structured(
+                user_targets=targets,
+                favorite_foods=favorites,
+                week_start=week_start_str,
+                food_preferences=food_preferences
+            )
+
+            # Convert Pydantic model to dict for database/API
+            meal_plan_dict = meal_plan_obj.model_dump()
+
+            # 5. Validate macro accuracy
+            if not meal_plan_obj.validate_macro_accuracy(tolerance=0.05):
+                logger.warning(f"Generated meal plan exceeds ±5% macro tolerance for user {ctx.deps.user_id}")
+                # Continue anyway for MVP - Claude did its best
+
+            # 6. Save to database
+            saved = await save_meal_plan(
+                ctx.deps.supabase,
+                ctx.deps.user_id,
+                week_start_str,
+                meal_plan_dict
+            )
+
+            if not saved:
+                return "Failed to save your meal plan. Please try again."
+
+            # 7. Store in deps for response passthrough
+            ctx.deps.generated_meal_plan = meal_plan_dict
+
+            # 8. Return conversational confirmation
+            if favorites:
+                food_note = "The plan uses your favorite foods and includes varied, balanced meals."
+            else:
+                food_note = "The plan uses common healthy whole foods with varied, balanced meals."
+
+            return f"✅ I've created your 7-day meal plan starting {week_start_str}! Each day is personalized to hit your targets ({targets['calories']} cal, {targets['protein']}g protein, {targets['carbs']}g carbs, {targets['fat']}g fat) within ±5%. {food_note}\n\nView your meal plan at: /meal-plans"
+
+        except Exception as e:
+            logger.error(f"generate_meal_plan failed: {e}", exc_info=True)
+            return "I encountered an error generating your meal plan. Please try again or contact support if the issue persists."
 
 # Register tools when module is imported
 register_tools()

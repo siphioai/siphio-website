@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { useRealtimeMacros } from '@/lib/hooks/useRealtimeMacros';
 import { sendChatMessage } from '@/lib/services/nutritionCoach';
-import { ChatMessage, QuickAction } from '@/types/chat';
+import { ChatMessage, QuickAction, MealPlan } from '@/types/chat';
 import {
   Bot,
   Send,
@@ -72,6 +72,7 @@ export function AINutritionCoach({ open, onOpenChange }: AINutritionCoachProps) 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [conversationHistory, setConversationHistory] = useState<any[]>([]);
+  const [currentMealPlan, setCurrentMealPlan] = useState<MealPlan | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const { current } = useRealtimeMacros();
@@ -150,6 +151,8 @@ export function AINutritionCoach({ open, onOpenChange }: AINutritionCoachProps) 
     setError(null);
 
     try {
+      // Send conversation history for contextual AI responses
+      // Backend filters out tool internals to prevent serialization issues
       const response = await sendChatMessage(textToSend, conversationHistory);
 
       const aiMessage: ChatMessage = {
@@ -160,6 +163,11 @@ export function AINutritionCoach({ open, onOpenChange }: AINutritionCoachProps) 
       };
       setMessages((prev) => [...prev, aiMessage]);
       setConversationHistory(response.conversation_history);
+
+      // Store meal plan if generated
+      if (response.meal_plan) {
+        setCurrentMealPlan(response.meal_plan);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to send message');
     } finally {
@@ -250,6 +258,7 @@ export function AINutritionCoach({ open, onOpenChange }: AINutritionCoachProps) 
               hasData={hasData}
             />
           )}
+
           {messages.map((msg, index) => (
             <MessageBubble
               key={msg.id}

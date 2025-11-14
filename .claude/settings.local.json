@@ -95,7 +95,16 @@
       "Bash(pkill:*)",
       "Bash(npm run typecheck:*)",
       "Bash(pbcopy)",
-      "Bash(git init:*)"
+      "Bash(git init:*)",
+      "Bash(./venv/bin/python:*)",
+      "Bash(./api/venv/bin/python:*)",
+      "Bash(kill:*)",
+      "Bash(PYTHONPATH=. ./api/venv/bin/python:*)",
+      "Bash(chmod:*)",
+      "Bash(timeout 30 tail:*)",
+      "Bash(PYTHONPATH=/Users/marley/siphio-website/api ./api/venv/bin/python:*)",
+      "Bash(PYTHONPATH=/Users/marley/siphio-website/api ./api/venv/bin/uvicorn:*)",
+      "Bash(open http://localhost:3000/meal-plans)"
     ],
     "deny": []
   }
